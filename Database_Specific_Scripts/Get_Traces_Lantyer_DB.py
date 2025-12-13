@@ -11,35 +11,34 @@ import pandas as pd
 import numpy as np
 
 
+# LG Change names so that "current" means electrical current, not temporal current (and others)
 def get_traces_Lantyer(original_cell_file_folder,cell_id,sweep_id,cell_sweep_table):
     
     #Get file name
-    file_name = cell_sweep_table.loc[cell_sweep_table['Cell_id'] == cell_id,
-                                     'Original_file'].unique()[0]
+    file_name = cell_sweep_table.loc[cell_sweep_table['Cell_id'] == cell_id,'Original_file'].unique()[0]
 
     #open File
-    current_file = scipy.io.loadmat(str(
+    cell_file = scipy.io.loadmat(str(
         str(original_cell_file_folder)+str(file_name)))
-    current_unique_cell_id = cell_id[-1]
+    # LG Why is cell_id a list?
+    _cell_id = cell_id[-1]
     
     #Get sweep from file 
-    experiment,current_Protocol,current_sweep = sweep_id.split("_")
-    current_id = str('Trace_'+current_unique_cell_id+'_' +
-                     current_Protocol+'_'+str(current_sweep))
+    experiment,sweep_protocol,current_sweep = sweep_id.split("_")
+    current_id = str('Trace_'+ _cell_id +'_' +
+                     sweep_protocol+'_'+str(current_sweep))
     #Get traces
-    current_stim_trace = pd.DataFrame(
-        current_file[str(current_id+'_1')], columns=['Time_s', 'Input_current_pA'])
-    current_stim_trace.loc[:, 'Input_current_pA'] *= 1e12 #To pA
+    stim_trace = pd.DataFrame(cell_file[str(current_id+'_1')], columns=['Time_s', 'Input_current_pA'])
+    stim_trace.loc[:, 'Input_current_pA'] *= 1e12 #To pA
 
-    current_membrane_trace = pd.DataFrame(
-        current_file[str(current_id+'_2')], columns=['Time_s', 'Membrane_potential_mV'])
-    current_membrane_trace.loc[:, 'Membrane_potential_mV'] *= 1e3 #to mV
+    membrane_trace = pd.DataFrame(cell_file[str(current_id+'_2')], columns=['Time_s', 'Membrane_potential_mV'])
+    membrane_trace.loc[:, 'Membrane_potential_mV'] *= 1e3 #to mV
 
-    time_trace = np.array(current_membrane_trace.loc[:, 'Time_s'])
-    potential_trace = np.array(
-        current_membrane_trace.loc[:, 'Membrane_potential_mV'])
+    # LG Fix these names....
+    time_trace = np.array(membrane_trace.loc[:, 'Time_s'])
+    potential_trace = np.array(membrane_trace.loc[:, 'Membrane_potential_mV'])
     
-    current_trace = np.array(current_stim_trace.loc[:, 'Input_current_pA'])
+    current_trace = np.array(stim_trace.loc[:, 'Input_current_pA'])
     
     return time_trace , potential_trace, current_trace
 
