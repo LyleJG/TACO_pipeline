@@ -1524,11 +1524,11 @@ def plot_BE_TACO_paper_plotly(dict_plot, style_dict=None, saving_path="", return
                 mode="lines", line=dict(color=c["bluish_green"], width=1),
                 name="Full trace 0.5 Hz LPF", legendgroup="Membrane"
             ), row=row, col=col)
-            fig.add_trace(go.Scatter(
-                x=TVC_table["V_pre_Time_s"], y=TVC_table["V_pre_Membrane_potential_0_5_LPF"],
-                mode="lines", line=dict(color=c["red"], width=2),
-                name="Pre_T 0.5 Hz LPF", legendgroup="Membrane"
-            ), row=row, col=col)
+            # fig.add_trace(go.Scatter(
+            #     x=TVC_table["V_pre_Time_s"], y=TVC_table["V_pre_Membrane_potential_0_5_LPF"],
+            #     mode="lines", line=dict(color=c["red"], width=2),
+            #     name="Pre_T 0.5 Hz LPF", legendgroup="Membrane"
+            # ), row=row, col=col)
             fig.add_trace(go.Scatter(
                 x=[actual_transition_time], y=[V_pre_transition_time],
                 mode="markers", marker=dict(color=c["orange"], size=8),
