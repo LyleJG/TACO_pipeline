@@ -94,7 +94,15 @@ Such that animal folder is "2016.03.28", in which "cell 3" has been recorded, fo
 Each ivb file contains a header containing information about the stimulus amplitude, the increment of stimulus amplitude between sweeps, sampling rate... followed by the raw membrane potential and input current traces.
 
 For each database to be analyzed, 3 different files must be prepared:
+
 ### 1- Population class table (.csv)
+***** LG Rename to "Cell Table"?
+***** LG When would there be more than one "Database" for a given Population class table?
+***** LG What is the first column for, e.g. 
+	Cell_id	General_area	Sub_area
+42	170811NC97_4	SS	Unknown
+
+
 This CSV file specifies and describes each cell present in the database. The only required information in this file is: 
 - Cell_id
 - Database
@@ -103,8 +111,9 @@ Therefore, the file should have as many rows than there are cells in the databas
 
 However, the more details can be attributed to each cell, regarding cellular information (e.g.: cell type, custom classification, cortical area, . . . ) or recording conditions (e.g.: age of the animal, recording temperature. . . ), the more details can be used in further analysis with other databases.
 
-
 ### 2- Cell-Sweep table (.csv)
+***** LG Rename to "Sweep Table"?
+
 This csv file describes, for each cell present in the database, the sweep to consider for the analysis. This information mainly concerns the organization of the database. The idea is that in any lab, any experiment performed on a cell is fundamentally a collection of sweeps. Most of the time, databases of current-clamp recordings organize their data so that different sweeps can easily be accessed, notably by indexing them separately by giving them a unique sweep id. However, it should be noted that some databases may not directly provide such information directly but rather provide method to understand the storage of the experiment, which results in the a-posteriori definition of sweep ids. Also, some databases may store in a same file, multiple kind of recordings. This is notably the case for the Allen Cell Type Database which recorded for each cell different protocols of current-clamp experiments (i.e.: long square stimulus, short square stimulus, noise…). By specifying this information for any cell of the database, it allows to ensure that only the same kind of protocols are considered, to keep track of the sweeps present in an experiment and organize the analysis in a trace-based fashion.
 The only required information in this file is:
 - Cell_id
@@ -112,6 +121,16 @@ The only required information in this file is:
 Apart from the cell_id (which should be unique across all databases, and match those present in the "Population class table") and the sweep_id to consider, no information is mandatory.
 Therefore, the file should have as many rows than there are sweeps to use in the database, and at least 2 columns (named "Cell_id" and "Sweep_id")
 Other sweep-related information that can be useful to access the traces (e.g.: stimulus amplitude, stimulus start and end times, ...) can be stored in other columns
+
+***** LG What is the first column for, e.g. 
+
+,Cell_id,Sweep_id,Original_file
+3197,161214AL113_3,CC_2_10,161214_AL_113_CC
+3198,161214AL113_3,CC_2_1,161214_AL_113_CC
+3199,161214AL113_3,CC_2_2,161214_AL_113_CC
+3200,161214AL113_3,CC_2_3,161214_AL_113_CC
+3201,161214AL113_3,CC_2_4,161214_AL_113_CC
+
 
 
 ### 3- Trace extraction Python script (.py)
@@ -197,11 +216,14 @@ After the analysis, the user can specify a path to save summary files (e.g., `/p
 
 To visually inspect the analysis, the user can go (after completion of the analysis) to the third panel **Cell Visualization**. In this panel, the user can select the JSON configuration file. The list of available cell files is generated based on the cells indicated in the different databases’ population class tables.
 
+***** LG Is this font/format **XXX** specifically for app panes/buttons? +++
+
 ---
 
 ## Example use of the TACO pipeline
 
 We provide a Test_folder.zip containing few example cells originating from **two open-access databases**:
+
 
 - Da Silva Lantyer et al., 2018  
 - Harrison et al., 2015  

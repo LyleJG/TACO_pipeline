@@ -98,7 +98,53 @@ def get_upstroke_dowstroke_and_intervals(args_list):
     
     return new_line
 
-def get_filtered_TVC_table(original_cell_full_TVC_table,sweep,do_filter=True,filter=5.,do_plot=False):
+# LG change
+def first(x):
+    """Return first element of array/list/Series safely."""
+    if hasattr(x, "iloc"):      # Pandas Series or Index
+        return x.iloc[0]
+    return x[0]                 # NumPy array or list
+
+
+def last(x):
+    """Return last element of array/list/Series safely."""
+    if hasattr(x, "iloc"):      # Pandas Series or Index
+        return x.iloc[-1]
+    return x[-1]                # NumPy array or list
+
+def time_slice_of_trace(time_trace, data_trace, start_time=None, end_time=None):
+    '''
+    Return slices of data_trace and time_trace according to the specified time window.
+    Parameters
+    ----------
+    time_trace : num array
+    data_trace : num array
+    start_time : num
+        DESCRIPTION. The default is None, thus window start at beginning of traces
+        Otherwise, window start in units of time_trace
+    end_time : num
+        DESCRIPTION. The default is None, thus window end at end of traces
+        Otherwise, window end in units of time_trace
+
+    Returns
+    -------
+    time_trace_slice, data_trace_slice
+        Windowed copies of original traces
+    '''
+    if start_time is None:
+        start_time = first(time_trace)
+    if end_time is None:
+        end_time = last(time_trace)
+
+    # Build mask for the desired time interval
+    mask = (time_trace >= start_time) & (time_trace <= end_time)
+
+    # Apply mask to both arrays
+    return time_trace[mask], data_trace[mask]
+
+
+def get_filtered_TVC_table(
+        original_cell_full_TVC_table,sweep,do_filter=True,filter=5.,do_plot=False):
     '''
     From the cell Full TVC table, get the sweep related TVC table, and if required, with filtered Potential and Current values
     
@@ -106,7 +152,7 @@ def get_filtered_TVC_table(original_cell_full_TVC_table,sweep,do_filter=True,fil
     Parameters
     ----------
     original_cell_full_TVC_table : pd.DataFrame
-        2 columns DataFrame, containing in column 'Sweep' the sweep_id and in the column 'TVC' the corresponding 3 columns DataFrame containing Time, Current and Potential Traces
+        2 columns DataFrame, containing in column 'Sweep' the sweep_id and in the column 'TVC' the corresponding 3 columns DataFrame containing Time (sec), Current and Potential Traces
     sweep : str
         Sweep id.
     do_filter : Bool, optional
@@ -223,8 +269,10 @@ def subsample_TVC_table(original_TVC_table, subsampling_freq):
         subsampled_TVC_table = subsampled_TVC_table.iloc[::subsample_factor,:]
         subsampled_TVC_table = subsampled_TVC_table.reset_index(drop=True)
         return subsampled_TVC_table
-    
-def filter_trace(value_trace, time_trace, filter=5., filter_order = 2, zero_phase = False,do_plot=False): 
+
+#  LG change
+def filter_trace(value_trace, time_trace, filter=5., filter_order = 2, zero_phase = False,do_plot=False,
+                 start_time_sec=None,end_time_sec=None):
     '''
     Apply a Butterworth Low-pass filters time-varying signal.
 
@@ -248,6 +296,11 @@ def filter_trace(value_trace, time_trace, filter=5., filter_order = 2, zero_phas
     do_plot : Boolean, optional
         Do Plot. The default is False.
 
+    start_time_sec : Num, optional
+          The default is None, thus start at beginning of trace.
+
+    end_time_sec : Num, optional
+          The default is None, thus end at end of trace.
     Raises
     ------
     ValueError
@@ -260,8 +313,11 @@ def filter_trace(value_trace, time_trace, filter=5., filter_order = 2, zero_phas
 
     '''
 
+    time_trace_slice,value_trace_slice=time_slice_of_trace(time_trace, value_trace,
+                                                   start_time=start_time_sec, end_time=end_time_sec)
 
-    delta_t = time_trace[1] - time_trace[0]
+
+    delta_t = time_trace_slice[1] - time_trace_slice[0]
     sample_freq = 1. / delta_t
 
     filt_coeff = (filter * 1e3) / (sample_freq / 2.) # filter kHz -> Hz, then get fraction of Nyquist frequency
@@ -273,17 +329,17 @@ def filter_trace(value_trace, time_trace, filter=5., filter_order = 2, zero_phas
     
     if zero_phase == True:
         # Apply the filter to the signal using filtfilt for zero-phase filtering
-        filtered_signal = scipy.signal.filtfilt(b, a, value_trace)
+        filtered_signal = scipy.signal.filtfilt(b, a, value_trace_slice)
     else:
         zi = scipy.signal.lfilter_zi(b, a)
     
-        filtered_signal =  scipy.signal.lfilter(b, a, value_trace,zi=zi*value_trace[0], axis=0)[0]
+        filtered_signal =  scipy.signal.lfilter(b, a, value_trace_slice,zi=zi*value_trace_slice[0], axis=0)[0]
    
     
     if do_plot:
-        signal_df = pd.DataFrame({'Time_s':np.array(time_trace),
-                                  'Values':np.array(value_trace)})
-        filtered_df = pd.DataFrame({'Time_s':np.array(time_trace),
+        signal_df = pd.DataFrame({'Time_s':np.array(time_trace_slice),
+                                  'Values':np.array(value_trace_slice)})
+        filtered_df = pd.DataFrame({'Time_s':np.array(time_trace_slice),
                                   'Values':np.array(filtered_signal)})
         
         signal_df ['Trace']='Original_Trace'
@@ -296,7 +352,8 @@ def filter_trace(value_trace, time_trace, filter=5., filter_order = 2, zero_phas
         
     return filtered_signal
 
-def get_derivative(value_trace, time_trace):
+# LG change
+def get_derivative(value_trace, time_trace, start_time_sec=None,end_time_sec=None):
     '''
     Get time derivative of a signal trace
 
@@ -308,13 +365,22 @@ def get_derivative(value_trace, time_trace):
     time_trace : np.array
         Array of time in second.
 
+    start_time_sec : Num, optional
+          The default is None, thus start at beginning of trace.
+
+    end_time_sec : Num, optional
+          The default is None, thus end at end of trace.
+
     Returns
     -------
     dvdt : np.array
         Time derivative of the time varying signal trace.
 
     '''
-    trace_derivative = np.gradient(value_trace, time_trace)
+    time_trace_slice,value_trace_slice=time_slice_of_trace(time_trace, value_trace,
+                                                   start_time=start_time_sec, end_time=end_time_sec)
+
+    trace_derivative = np.gradient(value_trace_slice, time_trace_slice)
     trace_derivative *= 1e-3 # in mV/s = mV/ms
     
 
@@ -562,7 +628,7 @@ def write_cell_file_h5(cell_file_path,
 
     file.close()
     
-
+# LG Change name
 def open_json_config_file(config_file):
     '''
     Open JSON configuration file and return a DataFrame

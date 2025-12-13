@@ -106,7 +106,7 @@ def sweep_analysis_processing(cell_Full_TVC_table, cell_stim_time_table):
     cell_sweep_info_table = cell_sweep_info_table.merge(
         extrapolated_BE, how='inner', on='Sweep')
 
-    
+
     
     ### Create Linear properties table
     
@@ -143,28 +143,7 @@ def sweep_analysis_processing(cell_Full_TVC_table, cell_stim_time_table):
         Linear_table, how='inner', on='Sweep')
     
     
-
-
-    cell_sweep_info_table = cell_sweep_info_table.loc[:, ['Sweep',
-                                                          "Protocol_id",
-                                                          'Trace_id',
-                                                          'Stim_amp_pA',
-                                                          'Stim_SS_pA',
-                                                          'Holding_current_pA',
-                                                          'Stim_start_s',
-                                                          'Stim_end_s',
-                                                          'Bridge_Error_GOhms',
-                                                          'Bridge_Error_extrapolated',
-                                                          'Time_constant_ms',
-                                                          'Input_Resistance_GOhms',
-                                                          'Holding_potential_mV',
-                                                          "SS_potential_mV",
-                                                          "Resting_potential_mV",
-                                                          'Sampling_Rate_Hz']]
-
-    cell_sweep_info_table.index = cell_sweep_info_table.loc[:, 'Sweep']
-    cell_sweep_info_table.index = cell_sweep_info_table.index.astype(str)
-    cell_sweep_info_table.index.name = 'Index'
+# LG
     convert_dict = {'Sweep': str,
                     'Protocol_id': str,
                     'Trace_id': int,
@@ -182,6 +161,46 @@ def sweep_analysis_processing(cell_Full_TVC_table, cell_stim_time_table):
                     "Resting_potential_mV":float,
                     'Sampling_Rate_Hz': float
                     }
+
+    cell_sweep_info_table = cell_sweep_info_table.loc[:, convert_dict.keys()]
+
+    # cell_sweep_info_table = cell_sweep_info_table.loc[:, ['Sweep',
+    #                                                       "Protocol_id",
+    #                                                       'Trace_id',
+    #                                                       'Stim_amp_pA',
+    #                                                       'Stim_SS_pA',
+    #                                                       'Holding_current_pA',
+    #                                                       'Stim_start_s',
+    #                                                       'Stim_end_s',
+    #                                                       'Bridge_Error_GOhms',
+    #                                                       'Bridge_Error_extrapolated',
+    #                                                       'Time_constant_ms',
+    #                                                       'Input_Resistance_GOhms',
+    #                                                       'Holding_potential_mV',
+    #                                                       "SS_potential_mV",
+    #                                                       "Resting_potential_mV",
+    #                                                       'Sampling_Rate_Hz']]
+
+    cell_sweep_info_table.index = cell_sweep_info_table.loc[:, 'Sweep']
+    cell_sweep_info_table.index = cell_sweep_info_table.index.astype(str)
+    cell_sweep_info_table.index.name = 'Index'
+    # convert_dict = {'Sweep': str,
+    #                 'Protocol_id': str,
+    #                 'Trace_id': int,
+    #                 'Stim_amp_pA': float,
+    #                 'Holding_current_pA':float,
+    #                 'Stim_SS_pA':float,
+    #                 'Stim_start_s': float,
+    #                 'Stim_end_s': float,
+    #                 'Bridge_Error_GOhms': float,
+    #                 'Bridge_Error_extrapolated': bool,
+    #                 'Time_constant_ms': float,
+    #                 'Input_Resistance_GOhms': float,
+    #                 'Holding_potential_mV':float,
+    #                 "SS_potential_mV": float,
+    #                 "Resting_potential_mV":float,
+    #                 'Sampling_Rate_Hz': float
+    #                 }
 
     cell_sweep_info_table = cell_sweep_info_table.astype(convert_dict)
     
@@ -215,8 +234,8 @@ def get_sweep_info_loop(cell_Full_TVC_table, cell_stim_time_table):
         One Row DataFrame containing different sweep related information.
 
     '''
-    
-    cell_sweep_info_table = pd.DataFrame(columns=['Sweep', 'Protocol_id', 'Trace_id', 'Stim_SS_pA', 'Holding_current_pA','Stim_amp_pA', 'Stim_start_s', 'Stim_end_s', 'Bridge_Error_GOhms', 'Bridge_Error_extrapolated', 'Sampling_Rate_Hz'])
+    # LG
+    # cell_sweep_info_table = pd.DataFrame(columns=['Sweep', 'Protocol_id', 'Trace_id', 'Stim_SS_pA', 'Holding_current_pA','Stim_amp_pA', 'Stim_start_s', 'Stim_end_s', 'Bridge_Error_GOhms', 'Bridge_Error_extrapolated', 'Sampling_Rate_Hz'])
     
     sweep_list = cell_Full_TVC_table.loc[:,'Sweep']
     
@@ -248,10 +267,11 @@ def get_sweep_info_loop(cell_Full_TVC_table, cell_stim_time_table):
         Holding_current,SS_current = fit_stimulus_trace(
             filtered_TVC_table, stim_start_time, stim_end_time,do_plot=False)[:2]
         
-        
+        # LG change
+        # print(f'get_sweep_info_loop estimate_bridge_error call with {current_sweep=}')
         
         if np.abs((Holding_current-SS_current))>=20.:
-        
+
             Bridge_Error = estimate_bridge_error(unfiltered_TVC_table, SS_current, stim_start_time, stim_end_time, do_plot=False)[0]
         
         else:
@@ -267,6 +287,8 @@ def get_sweep_info_loop(cell_Full_TVC_table, cell_stim_time_table):
     
     
         stim_amp = SS_current - Holding_current
+
+
         output_line = pd.DataFrame([str(current_sweep),
                                  str(Protocol_id),
                                  Trace_id,
@@ -279,6 +301,8 @@ def get_sweep_info_loop(cell_Full_TVC_table, cell_stim_time_table):
                                  BE_extrapolated,
                                  sampling_rate]).T
         output_line.columns=['Sweep', 'Protocol_id', 'Trace_id', 'Stim_SS_pA', 'Holding_current_pA','Stim_amp_pA', 'Stim_start_s', 'Stim_end_s', 'Bridge_Error_GOhms', 'Bridge_Error_extrapolated', 'Sampling_Rate_Hz']
+        #  LG
+        cell_sweep_info_table = pd.DataFrame(columns=output_line.columns)
         cell_sweep_info_table = pd.concat([cell_sweep_info_table, output_line], ignore_index = True)
         
     
@@ -891,8 +915,8 @@ def estimate_bridge_error(original_TVC_table,stim_amplitude,stim_start_time,stim
         
 
         TVC_table.loc[:,"I_dot_five_kHz"] = current_trace_derivative_5kHz
-        
-        
+
+
         Five_kHz_LP_filtered_voltage_trace = np.array(ordifunc.filter_trace(np.array(TVC_table.loc[:,'Membrane_potential_mV']),
                                                                             np.array(TVC_table.loc[:,'Time_s']),
                                                                             filter=5,
@@ -1027,6 +1051,8 @@ def estimate_bridge_error(original_TVC_table,stim_amplitude,stim_start_time,stim
         V_post_transition_time = time_cst_model(shift_transition_time, best_single_A, best_single_tau, best_single_C)
             
         #Determine V_pre and V_post
+        # LG change - Estimate V_pre from 0.5kHz LPF of voltage for (T*-5 <= time <= T*),  not entire trace
+        # Keep 0.5kHz LPF of entire trace for plotting only?
         TVC_table_subset = TVC_table.loc[(TVC_table["Time_s"]>=(actual_transition_time-0.005)) & (TVC_table["Time_s"]<=(actual_transition_time)), :].copy()
     
         Zero_5_kHz_LP_filtered_voltage_trace_subset = np.array(ordifunc.filter_trace(np.array(TVC_table_subset.loc[:,'Membrane_potential_mV']),
@@ -1042,8 +1068,30 @@ def estimate_bridge_error(original_TVC_table,stim_amplitude,stim_start_time,stim
         TVC_table_subset.loc[:,"Membrane_potential_0_5_LPF"] = Zero_5_kHz_LP_filtered_voltage_trace_subset
 
         TVC_table = pd.merge(TVC_table, TVC_table_subset.loc[:,['Time_s','Membrane_potential_0_5_LPF']], on="Time_s", how='outer')
-        V_pre_transition_time = TVC_table_subset.loc[TVC_table_subset['Time_s']==actual_transition_time, "Membrane_potential_0_5_LPF"].values[0]
-        
+
+
+        V_pre_transition_time_old = TVC_table_subset.loc[TVC_table_subset['Time_s']==actual_transition_time, "Membrane_potential_0_5_LPF"].values[0]
+
+        Time_s=np.array(TVC_table.loc[:,'Time_s'])
+        Membrane_potential_mV=np.array(TVC_table.loc[:,'Membrane_potential_mV'])
+
+        pre_T_start_time=(actual_transition_time-0.005)
+        pre_T_time, pre_T_V=ordifunc.time_slice_of_trace(Time_s, Membrane_potential_mV,
+                                                         start_time=pre_T_start_time, end_time=actual_transition_time)
+        V_pre_T_filtered=ordifunc.filter_trace(Membrane_potential_mV, Time_s,
+                                               filter=0.5, filter_order = 2, zero_phase = False,do_plot=False,
+                                               start_time_sec=pre_T_start_time,
+                                               end_time_sec=actual_transition_time)
+
+        # This is the wrong way to do it, but somehow want to load TVC_table to plot subsets of the entire trace?
+        # TVC_table_subset.loc[:,"V_pre_Membrane_potential_0_5_LPF"] = V_pre_T_filtered
+        # TVC_table_subset.loc[:,"V_pre_Time_s"] = pre_T_time
+
+        # TVC_table = pd.merge(TVC_table, TVC_table_subset.loc[:,['V_pre_Time_s','V_pre_Membrane_potential_0_5_LPF']],
+        #                      on="V_pre_Time_s", how='outer')
+
+        V_pre_transition_time=V_pre_T_filtered[-1]
+        # print(f'  {V_pre_transition_time_old=} {V_pre_transition_time=}')
         delta_V = V_post_transition_time - V_pre_transition_time
         
         Bridge_Error = delta_V/delta_I

@@ -701,6 +701,7 @@ app_ui = ui.page_fluid(
     fill=True
 )
 
+# LG Need to rewrite clearly
 def import_json_config_file(json_config_file):
     i=0
     for file in json_config_file:
@@ -1793,8 +1794,15 @@ def server(input: Inputs, output: Outputs, session: Session):
         if not input.json_file_input():
             return "No file uploaded."
         else:
+
+            # LG Change e.g. config_json_file -> config_json_file_df
+            # json_config_file=[{'name': 'config_json_file_test_lg.json', 'size': 909,
+            #                    'type': 'application/json',
+            #                    'datapath': '/tmp/fileupload-mz7oynv3/tmpn421445y/0.json'}]
+
             json_config_file = input.json_file_input()
-            print(json_config_file)
+            # LG
+            print(f'script_output {json_config_file=}')
             config_df = import_json_config_file(json_config_file)
             
             #GEt nb of CPU cores to use
@@ -1829,6 +1837,7 @@ def server(input: Inputs, output: Outputs, session: Session):
                 db_cell_sweep_file = pd.read_csv(current_db['db_cell_sweep_csv_file'],sep =',',encoding = "unicode_escape")
                 
                 cell_id_list = db_cell_sweep_file['Cell_id'].unique()
+                # LG Why shuffle?
                 random.shuffle(cell_id_list)
                 
                 args_list = [[x,
@@ -1908,7 +1917,9 @@ def server(input: Inputs, output: Outputs, session: Session):
             return "No file uploaded."
         else:
             json_config_file = input.json_file_input()
-            
+
+            # LG Change e.g. config_json_file -> config_json_file_df
+            # json_config_file is a list of dicts?
             config_json_file = import_json_config_file(json_config_file)
             
         saving_path = input.summary_folder_path()

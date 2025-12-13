@@ -68,14 +68,13 @@ def cell_processing(args_list):
                 saving_dict = {}
                 processing_table = pd.DataFrame(columns=['Processing_step','Processing_time','Warnings_encontered'])
             
-    
-                Full_SF_dict='--'
-                cell_sweep_info_table='--'
-                cell_Sweep_QC_table='--'
-                cell_fit_table='--'
-                cell_adaptation_table = '--'
-                cell_feature_table='--'
-                Metadata_dict='--'
+    # LG
+                # Full_SF_dict='--'
+                # cell_sweep_info_table='--'
+                # cell_Sweep_QC_table='--'
+                # cell_adaptation_table = '--'
+                # cell_feature_table='--'
+                # Metadata_dict='--'
                 
                 current_process = "Get traces"
                 
@@ -83,8 +82,8 @@ def cell_processing(args_list):
                 # Gather for the different sweeps of the cell, time, voltage and current traces, as weel as stimulus start and end times
                 
                
-                
-                args_list = [module,
+                # LG
+                get_db_traces_args = [module,
                               full_path_to_python_script,
                               current_db["db_function_name"],
                               db_original_file_directory,
@@ -95,7 +94,7 @@ def cell_processing(args_list):
                               current_db["db_stimulus_duration"]]
                 
                 
-                Full_TVC_table, cell_stim_time_table, processing_table = get_db_traces(args_list, processing_table)
+                Full_TVC_table, cell_stim_time_table, processing_table = get_db_traces(get_db_traces_args, processing_table)
                 
                 current_process = "Sweep analysis"
                 cell_sweep_info_table, processing_table = perform_sweep_related_analysis(Full_TVC_table, cell_stim_time_table, processing_table)
@@ -375,10 +374,11 @@ def get_db_traces(args_list, processing_table):
         
     return Full_TVC_table, cell_stim_time_table, processing_table
 
-def perform_sweep_related_analysis (Full_TVC_table, cell_stim_time_table, processing_table):
+# LG change Full_TVC_table to cell_Full_TVC_table for consistency (other plances?)
+def perform_sweep_related_analysis (cell_Full_TVC_table, cell_stim_time_table, processing_table):
     """
     Organize the sweep analysis
-    Requires the Full_TVC_table, cell_stim_time_table, processing_table (from get_db_traces)
+    Requires the cell_Full_TVC_table, cell_stim_time_table, processing_table (from get_db_traces)
 
     
 
@@ -387,7 +387,7 @@ def perform_sweep_related_analysis (Full_TVC_table, cell_stim_time_table, proces
     start_time=time.time()
     with warnings.catch_warnings(record=True) as warning_cell_sweep_table:
         
-        cell_sweep_info_table = sw_an.sweep_analysis_processing(Full_TVC_table, cell_stim_time_table)
+        cell_sweep_info_table = sw_an.sweep_analysis_processing(cell_Full_TVC_table, cell_stim_time_table)
 
     end_time=time.time()
     processing_time = end_time - start_time
