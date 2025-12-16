@@ -33,7 +33,7 @@ import importlib
               'datapath': '/tmp/fileupload-t62z5qet/tmptfq9hpkk/0.json'}],
             ('All',), True]
 
-def cell_processing(cell_id, config_files_idx=0, config_files=None, analysis=['All'], overwrite_files=False):
+def cell_processing(cell_id, config_files_idx=0, config_pointers=None, analysis=['All'], overwrite_files=False):
     """
     Central function of the TACO pipeline
     Runs the analysis on a specified cell.
@@ -41,7 +41,7 @@ def cell_processing(cell_id, config_files_idx=0, config_files=None, analysis=['A
     Parameters
     ----------
     cell_id (str),  
-    config_files: paths of TACO config files
+    config_files: paths of TACO config files, or dicts from ui paths input
     config_files_idx: which file in that list to use, default = 0.
     overwrite_files: overwrite existing cell file, default = False.
     analysis: list of analyses to perform, default = ['All'].
@@ -51,8 +51,8 @@ def cell_processing(cell_id, config_files_idx=0, config_files=None, analysis=['A
     Either saves the analysis or return the cell_id if the analysis fails
 
     """
-    print(f'{cell_id=}, {config_files_idx=},{config_files=},{analysis=}, ')
-    config_df = TACO_pipeline_App.import_json_config_files(config_files)
+    # print(f'{cell_id=}, {config_files_idx=},{config_files=},{analysis=}, ')
+    config_df = TACO_pipeline_App.import_json_config_files_to_config_df(config_pointers)
     current_db = config_df.loc[config_files_idx,:].to_dict()
     database_name = current_db["database_name"]
     path_to_python_folder = current_db["path_to_db_script_folder"]
@@ -274,6 +274,7 @@ def cell_processing(cell_id, config_files_idx=0, config_files=None, analysis=['A
         processing_table = pd.concat([processing_table,new_line],ignore_index=True,axis=0)
         saving_dict.update({"Processing report" : processing_table})
         #Write the different analysis in the cell file
+        print(f'Calling write_cell_file_h5 with {error=}')
         ordifunc.write_cell_file_h5(saving_file_cell,
                            saving_dict,
                            overwrite=overwrite_files,

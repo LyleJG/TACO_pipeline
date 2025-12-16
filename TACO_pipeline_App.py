@@ -702,13 +702,13 @@ app_ui = ui.page_fluid(
 )
 
 # LG Need to rewrite clearly
-def import_json_config_files(json_config_files, arg_from_ui=True):
+def import_json_config_files_to_config_df(config_pointers, arg_from_ui=True):
     i=0
-    for file in json_config_files:
-        if isinstance(file, dict):
-            file_path = file['datapath']
+    for pointer in config_pointers:
+        if isinstance(pointer, dict):
+            file_path = pointer['datapath']
         else:
-            file_path = file
+            file_path = pointer
 
         if not os.path.exists(file_path):
             raise FileNotFoundError(f"File not found: {file_path}")
@@ -1804,8 +1804,8 @@ def server(input: Inputs, output: Outputs, session: Session):
             #                    'type': 'application/json',
             #                    'datapath': '/tmp/fileupload-mz7oynv3/tmpn421445y/0.json'}]
 
-            config_files = input.json_file_input()
-            config_df = import_json_config_files(config_files)
+            config_pointers = input.json_file_input()
+            config_df = import_json_config_files_to_config_df(config_pointers)
             
             #GEt nb of CPU cores to use
             nb_of_workers_to_use = int(input.n_CPU())
@@ -1836,7 +1836,7 @@ def server(input: Inputs, output: Outputs, session: Session):
                             analysis_pipeline.cell_processing,
                             cell_id,
                             config_files_idx=config_files_idx,
-                            config_files=config_files,
+                            config_pointers=config_pointers,
                             analysis=analysis,
                             overwrite_files=overwrite_files): cell_id for cell_id in cell_id_list}
                         i=1
@@ -1895,11 +1895,11 @@ def server(input: Inputs, output: Outputs, session: Session):
         if not input.json_file_input():
             return "No file uploaded."
         else:
-            json_config_files = input.json_file_input()
+            config_pointers = input.json_file_input()
 
             # LG Change e.g. config_json_file -> config_json_file_df
             # json_config_file is a list of dicts?
-            config_json_file = import_json_config_files(json_config_files)
+            config_json_file = import_json_config_files_to_config_df(config_pointers)
             
         saving_path = input.summary_folder_path()
         if not saving_path.endswith(os.path.sep):
