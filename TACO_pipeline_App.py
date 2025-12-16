@@ -702,11 +702,14 @@ app_ui = ui.page_fluid(
 )
 
 # LG Need to rewrite clearly
-def import_json_config_file(json_config_file):
+def import_json_config_files(json_config_files, arg_from_ui=True):
     i=0
-    for file in json_config_file:
-        file_path = file['datapath']
-        
+    for file in json_config_files:
+        if isinstance(file, dict):
+            file_path = file['datapath']
+        else:
+            file_path = file
+
         if not os.path.exists(file_path):
             raise FileNotFoundError(f"File not found: {file_path}")
         if i == 0:
@@ -1028,7 +1031,8 @@ def get_sweep_linear_properties_analysis(cell_dict, current_sweep):
     
     stim_start = Sweep_info_table.loc[Sweep_info_table['Sweep'] == current_sweep,'Stim_start_s'].values[0]
     stim_end = Sweep_info_table.loc[Sweep_info_table['Sweep'] == current_sweep,'Stim_end_s'].values[0]
-    current_TVC_table= ordifunc.get_filtered_TVC_table(Full_TVC_table,current_sweep,do_filter=True,filter=5.,do_plot=False)
+    # LG get_filtered_TVC_table -> get_sweep_TVC_table
+    current_TVC_table= ordifunc.get_sweep_TVC_table(Full_TVC_table,current_sweep,do_filter=True,filter=5.,do_plot=False)
 
     BE = Sweep_info_table.loc[current_sweep, "Bridge_Error_GOhms"]
     TVC_table = current_TVC_table.copy()
@@ -1800,76 +1804,51 @@ def server(input: Inputs, output: Outputs, session: Session):
             #                    'type': 'application/json',
             #                    'datapath': '/tmp/fileupload-mz7oynv3/tmpn421445y/0.json'}]
 
-            json_config_file = input.json_file_input()
-            # LG
-            print(f'script_output {json_config_file=}')
-            config_df = import_json_config_file(json_config_file)
+            config_files = input.json_file_input()
+            config_df = import_json_config_files(config_files)
             
             #GEt nb of CPU cores to use
             nb_of_workers_to_use = int(input.n_CPU())
             if nb_of_workers_to_use == 0:
                 nb_of_workers_to_use = 1
             
-            analysis_to_perform = input.select_analysis()
-            overwrite_cell_files_yes_no = input.overwrite_existing_files()
-            if overwrite_cell_files_yes_no == 'Yes':
-                overwrite_cell_files = True
-            elif overwrite_cell_files_yes_no == 'No':
-                overwrite_cell_files = False
+            analysis = input.select_analysis()
+            overwrite_files_yes_no = input.overwrite_existing_files()
+            if overwrite_files_yes_no == 'Yes':
+                overwrite_files = True
+            elif overwrite_files_yes_no == 'No':
+                overwrite_files = False
             
             path_to_saving_file = config_df.loc[0,'path_to_saving_file']
             path_to_QC_file = config_df.loc[0,'path_to_QC_file']
             
-            for elt in config_df.index:
-                
-                current_db = config_df.loc[elt,:].to_dict()
+            for config_files_idx in config_df.index:
+                current_db = config_df.loc[config_files_idx,:].to_dict()
                 database_name = current_db["database_name"]
-                path_to_python_folder = current_db["path_to_db_script_folder"]
-                
-                python_file=current_db['python_file_name']
-                module=python_file.replace('.py',"")
-                full_path_to_python_script=str(path_to_python_folder+python_file)
-                
-                spec=importlib.util.spec_from_file_location(module,full_path_to_python_script)
-                DB_module = importlib.util.module_from_spec(spec)
-                spec.loader.exec_module(DB_module)
-                
                 db_cell_sweep_file = pd.read_csv(current_db['db_cell_sweep_csv_file'],sep =',',encoding = "unicode_escape")
-                
                 cell_id_list = db_cell_sweep_file['Cell_id'].unique()
                 # LG Why shuffle?
                 random.shuffle(cell_id_list)
-                
-                args_list = [[x,
-                              current_db,
-                              module,
-                              full_path_to_python_script,
-                              path_to_QC_file, 
-                              path_to_saving_file,
-                              overwrite_cell_files,
-                              analysis_to_perform] for x in cell_id_list]
-                
-                
                 start_time = time.time()
                 with ui.Progress(min=0, max=len(cell_id_list)) as progress:
                     with concurrent.futures.ProcessPoolExecutor(max_workers=nb_of_workers_to_use) as executor:
-                        problem_cell_list = {executor.submit(analysis_pipeline.cell_processing, x): x for x in args_list}
+                        problem_cell_list = {executor.submit(
+                            analysis_pipeline.cell_processing,
+                            cell_id,
+                            config_files_idx=config_files_idx,
+                            config_files=config_files,
+                            analysis=analysis,
+                            overwrite_files=overwrite_files): cell_id for cell_id in cell_id_list}
                         i=1
                         for f in concurrent.futures.as_completed(problem_cell_list):
                             cell_id_problem = f.result()
                             if cell_id_problem is not None:
                                 problem_cell.append(cell_id_problem)
-                            
-                            
-                            
+
                             formatted_time, remaining_formatted_time = estimate_processing_time(start_time, len(cell_id_list), i)
 
-                            
-                            
                             progress.set(i, message=f"Processing {database_name}:", detail=f" {i}/{len(cell_id_list)};  Time spent: {formatted_time}, Estimated remaining time:{remaining_formatted_time}")
                             i+=1
-                            
-
 
                 print(f'Database {database_name} processed')
             
@@ -1916,11 +1895,11 @@ def server(input: Inputs, output: Outputs, session: Session):
         if not input.json_file_input():
             return "No file uploaded."
         else:
-            json_config_file = input.json_file_input()
+            json_config_files = input.json_file_input()
 
             # LG Change e.g. config_json_file -> config_json_file_df
             # json_config_file is a list of dicts?
-            config_json_file = import_json_config_file(json_config_file)
+            config_json_file = import_json_config_files(json_config_files)
             
         saving_path = input.summary_folder_path()
         if not saving_path.endswith(os.path.sep):
@@ -2305,6 +2284,7 @@ def server(input: Inputs, output: Outputs, session: Session):
             )
             cell_file_correctly_opened.set(True)
             cell_id_reactive_var.set(cell_id)
+
             return cell_dict
     
         except Exception as e:
@@ -3231,7 +3211,10 @@ def server(input: Inputs, output: Outputs, session: Session):
             sub_spike_super_position_table = sub_spike_super_position_table.astype({'Spike_index': 'category'})
             current_spike_index_list = [str(x) for x in range(sub_spike_super_position_table['Spike_index'].astype(int).min(),
                                                               sub_spike_super_position_table['Spike_index'].astype(int).max() + 1)]
-            discrete_colors = sample_colorscale('plasma_r', minmax_scale(current_spike_index_list))
+            # LG Fix known Plotly bug in sample_colorscale.
+            n = len(current_spike_index_list)
+            scaled = np.linspace(0, 0.999999, n)
+            discrete_colors = sample_colorscale('plasma_r', scaled)
 
         # Handle colors for spikes not in the filtered table
         for x in range(spike_trace_table['Spike_index'].astype(int).min(), spike_trace_table['Spike_index'].astype(int).max() + 1):
@@ -3247,6 +3230,7 @@ def server(input: Inputs, output: Outputs, session: Session):
         color_dict = {}
 
         # Create full spike index list as strings
+        # LG Shouldn't these be ints?
         full_spike_index_list = [str(x) for x in range(spike_trace_table['Spike_index'].astype(int).min(),
                                                        spike_trace_table['Spike_index'].astype(int).max() + 1)]
 
@@ -3320,7 +3304,10 @@ def server(input: Inputs, output: Outputs, session: Session):
             sub_spike_super_position_table = sub_spike_super_position_table.astype({'Spike_index': 'category'})
             current_spike_index_list = [str(x) for x in range(sub_spike_super_position_table['Spike_index'].astype(int).min(),
                                                               sub_spike_super_position_table['Spike_index'].astype(int).max() + 1)]
-            discrete_colors = sample_colorscale('plasma_r', minmax_scale(current_spike_index_list))
+            # LG Fix known Plotly bug in sample_colorscale.
+            n = len(current_spike_index_list)
+            scaled = np.linspace(0, 0.999999, n)
+            discrete_colors = sample_colorscale('plasma_r', scaled)
 
         # Handle colors for spikes not in the filtered table
         for x in range(spike_trace_table['Spike_index'].astype(int).min(), spike_trace_table['Spike_index'].astype(int).max() + 1):
@@ -4695,7 +4682,8 @@ def server(input: Inputs, output: Outputs, session: Session):
                 current_second_feature_table = sub_SF_table.loc[sub_SF_table['Feature']==Spike_feature_y,:]
                 
                 if Spike_feature_x == 'Trough' and Spike_index_y=="N+1":
-                    sub_TVC = ordifunc.get_filtered_TVC_table(Full_TVC_table, sweep)
+                    # LG get_filtered_TVC_table -> get_sweep_TVC_table
+                    sub_TVC = ordifunc.get_sweep_TVC_table(Full_TVC_table, sweep)
                     stim_start_time = Sweep_info_table.loc[sweep, "Stim_start_s"]
                     First_spike_time = list(sub_SF_table.loc[sub_SF_table['Feature']=="Threshold",'Time_s'])[0]
                     

@@ -15,6 +15,7 @@ import importlib
 import re
 import tqdm
 import Sweep_analysis as sw_an
+import Sweep_analysis_09_12_2025 as sw_an_09_12_2025
 import Spike_analysis as sp_an
 import Firing_analysis as fir_an
 import traceback
@@ -47,11 +48,11 @@ def get_upstroke_dowstroke_and_intervals(args_list):
         
         
         sweep_info_table = sweep_info_table.sort_values(by=['Stim_amp_pA'])
-        sweep_list = np.array(sweep_info_table.loc[:,'Sweep'])
+        cell_sweep_list = np.array(sweep_info_table.loc[:,'Sweep'])
         first_upstroke_deriv, first_downstroke_deriv, first_interval, tenth_interval, first_sweep_with_five, first_sweep_with_ten = [np.nan]*6
         Obs='--'
         
-        for current_sweep in sweep_list:
+        for current_sweep in cell_sweep_list:
             SF_table = Full_SF_table.loc[current_sweep, "SF"]
             
             peak_table = SF_table.loc[SF_table['Feature']=='Peak',:]
@@ -70,7 +71,7 @@ def get_upstroke_dowstroke_and_intervals(args_list):
                 first_sweep_with_five = current_sweep
                 break
                 
-        for current_sweep in sweep_list:
+        for current_sweep in cell_sweep_list:
             SF_table = Full_SF_table.loc[current_sweep, "SF"]
             
             peak_table = SF_table.loc[SF_table['Feature']=='Peak',:]
@@ -99,6 +100,19 @@ def get_upstroke_dowstroke_and_intervals(args_list):
     return new_line
 
 # LG change
+
+def frame_with_nans(time_full, trace_subset_start, trace_subset):
+    NaN_padded_trace_subset = np.full(time_full.shape, np.nan, dtype=float)
+
+    start_idx = np.searchsorted(time_full, trace_subset_start)
+    end_idx   = start_idx + len(trace_subset)
+
+    if end_idx > len(time_full):
+        raise ValueError("trace_subset length exceeds available time window")
+
+    NaN_padded_trace_subset[start_idx:end_idx] = trace_subset
+    return NaN_padded_trace_subset
+
 def first(x):
     """Return first element of array/list/Series safely."""
     if hasattr(x, "iloc"):      # Pandas Series or Index
@@ -142,72 +156,63 @@ def time_slice_of_trace(time_trace, data_trace, start_time=None, end_time=None):
     # Apply mask to both arrays
     return time_trace[mask], data_trace[mask]
 
-
-def get_filtered_TVC_table(
-        original_cell_full_TVC_table,sweep,do_filter=True,filter=5.,do_plot=False):
+# LG get_filtered_TVC_table -> get_sweep_TVC_table, changed variable names to cell_TVC_table and sweep_TVC_table
+def get_sweep_TVC_table(cell_TVC_table,sweep,do_filter=True,filter=5.,do_plot=False):
     '''
-    From the cell Full TVC table, get the sweep related TVC table, and if required, with filtered Potential and Current values
+    From the cell Full TVC table, get the sweep related TVC table, 
+    with (default filtered at 5kHz) Potential and Current values
     
-
     Parameters
     ----------
-    original_cell_full_TVC_table : pd.DataFrame
+    cell_TVC_table : pd.DataFrame
         2 columns DataFrame, containing in column 'Sweep' the sweep_id and in the column 'TVC' the corresponding 3 columns DataFrame containing Time (sec), Current and Potential Traces
-    sweep : str
-        Sweep id.
-    do_filter : Bool, optional
-        Wether or not to Filter Membrane voltage and Current traces. The default is True.
-    do_plot : Bool, optional
-       The default is False.
+    sweep : Sweep id.
+    do_filter : Default True.
+    filter : LPF f_c kHz, default 5
+    do_plot : Default False.
 
     Returns
     -------
-    TVC_table : pd.DataFrame
+    sweep_TVC_table : pd.DataFrame
         Contains the Time, voltage, Current and voltage 1st and 2nd derivatives arranged in columns.
 
     '''
     
-    cell_full_TVC_table = original_cell_full_TVC_table.copy()
-    TVC_table=cell_full_TVC_table.loc[str(sweep),'TVC'].copy()
+    # cell_TVC_table = original_cell_TVC_table.copy()
+    sweep_TVC_table=cell_TVC_table.loc[str(sweep),'TVC'].copy()
 
     if do_filter:
         #Filter membrane potential and input current traces
         
-        TVC_table['Membrane_potential_mV']=np.array(filter_trace(TVC_table['Membrane_potential_mV'],
-                                                                            TVC_table['Time_s'],
-                                                                            filter=filter,
-                                                                            do_plot=do_plot))
+        sweep_TVC_table['Membrane_potential_mV']=np.array(
+            filter_trace(sweep_TVC_table['Membrane_potential_mV'],
+                         sweep_TVC_table['Time_s'], filter=filter, do_plot=do_plot))
         
-        TVC_table['Input_current_pA']=np.array(filter_trace(TVC_table['Input_current_pA'],
-                                                                            TVC_table['Time_s'],
-                                                                            filter=filter,
-                                                                            do_plot=do_plot))
-    
+        sweep_TVC_table['Input_current_pA']=np.array(
+            filter_trace(sweep_TVC_table['Input_current_pA'],
+                         sweep_TVC_table['Time_s'], filter=filter, do_plot=do_plot))
     
     #Get first and second time derivative of membrane potential trace
-    first_derivative=get_derivative(np.array(TVC_table['Membrane_potential_mV']),np.array(TVC_table['Time_s']))
-    second_derivative=get_derivative(first_derivative,np.array(TVC_table['Time_s']))
-
+    first_derivative=get_derivative(np.array(sweep_TVC_table['Membrane_potential_mV']),np.array(sweep_TVC_table['Time_s']))
+    second_derivative=get_derivative(first_derivative,np.array(sweep_TVC_table['Time_s']))
     
-    TVC_table['Potential_first_time_derivative_mV/s'] = first_derivative
-    TVC_table["Potential_second_time_derivative_mV/s/s"] = second_derivative
-    TVC_table=TVC_table.astype({'Time_s':float,
+    sweep_TVC_table['Potential_first_time_derivative_mV/s'] = first_derivative
+    sweep_TVC_table["Potential_second_time_derivative_mV/s/s"] = second_derivative
+    sweep_TVC_table=sweep_TVC_table.astype({'Time_s':float,
                                'Membrane_potential_mV':float,
                                'Input_current_pA':float,
                                'Potential_first_time_derivative_mV/s':float,
-                               'Potential_second_time_derivative_mV/s/s':float}) 
-    
+                               'Potential_second_time_derivative_mV/s/s':float})
     
     if do_plot:
-        voltage_plot = p9.ggplot(TVC_table,p9.aes(x='Time_s',y='Membrane_potential_mV'))+p9.geom_line()
+        voltage_plot = p9.ggplot(sweep_TVC_table,p9.aes(x='Time_s',y='Membrane_potential_mV'))+p9.geom_line()
         voltage_plot+=p9.ggtitle(str('Sweep:'+str(sweep)+'Membrane_Potential_mV'))
         print(voltage_plot)
-        current_plot=p9.ggplot(TVC_table,p9.aes(x='Time_s',y='Input_current_pA'))+p9.geom_line()
+        current_plot=p9.ggplot(sweep_TVC_table,p9.aes(x='Time_s',y='Input_current_pA'))+p9.geom_line()
         current_plot+=p9.ggtitle(str('Sweep:'+str(sweep)+'Input_current_pA'))
         print(current_plot)
 
-
-    return TVC_table
+    return sweep_TVC_table
 
 def subsample_TVC_table(original_TVC_table, subsampling_freq):
     """
@@ -463,8 +468,8 @@ def write_cell_file_h5(cell_file_path,
             if isinstance(original_Full_SF_dict,pd.DataFrame) == True:
                 SF_group = file.create_group("Spike analysis")
                 
-                sweep_list = np.array(original_Full_SF_dict['Sweep'])
-                for current_sweep in sweep_list:
+                cell_sweep_list = np.array(original_Full_SF_dict['Sweep'])
+                for current_sweep in cell_sweep_list:
                     
                     current_SF_dict = original_Full_SF_dict.loc[current_sweep, "SF_dict"]
                     current_SF_group = SF_group.create_group(str(current_sweep))
@@ -476,10 +481,10 @@ def write_cell_file_h5(cell_file_path,
     
         elif 'Spike analysis' not in file.keys():
             if isinstance(original_Full_SF_dict,pd.DataFrame) == True:
-                sweep_list = np.array(original_Full_SF_dict['Sweep'])
+                cell_sweep_list = np.array(original_Full_SF_dict['Sweep'])
                 SF_group = file.create_group("Spike analysis")
                 
-                for current_sweep in sweep_list:
+                for current_sweep in cell_sweep_list:
         
                     current_SF_dict = original_Full_SF_dict.loc[current_sweep, "SF_dict"]
                     current_SF_group = SF_group.create_group(str(current_sweep))
@@ -499,7 +504,7 @@ def write_cell_file_h5(cell_file_path,
             del file["Sweep analysis"]
             if isinstance(original_cell_sweep_info_table,pd.DataFrame) == True:
                 cell_sweep_info_table_group = file.create_group('Sweep analysis')
-                sweep_list=np.array(original_cell_sweep_info_table['Sweep'])
+                cell_sweep_list=np.array(original_cell_sweep_info_table['Sweep'])
         
                 for elt in np.array(original_cell_sweep_info_table.columns):
                     cell_sweep_info_table_group.create_dataset(
@@ -895,7 +900,7 @@ def read_cell_file_h5(cell_id, config_line, selection=['All']):
 
     current_file = h5py.File(cell_file_path, 'r')
 
-    Full_TVC_table = pd.DataFrame()
+    # Full_TVC_table = pd.DataFrame()
     Full_SF_dict_table = pd.DataFrame()
     Full_SF_table = pd.DataFrame()
     Metadata_table = pd.DataFrame()
@@ -931,7 +936,7 @@ def read_cell_file_h5(cell_id, config_line, selection=['All']):
         
         SF_group = current_file['Spike analysis']
 
-        sweep_list = list(SF_group.keys())
+        cell_sweep_list = list(SF_group.keys())
 
         
         
@@ -961,24 +966,36 @@ def read_cell_file_h5(cell_id, config_line, selection=['All']):
         
         
         Full_SF_dict_table = pd.DataFrame(columns=['Sweep', 'SF_dict'])
-        
-        
+
         args_list = [module,
                       full_path_to_python_script,
                       config_line["db_function_name"],
                       db_original_file_directory,
                       cell_id,
-                      sweep_list,
+                      cell_sweep_list,
                       db_cell_sweep_file,
                       config_line["stimulus_time_provided"],
                       config_line["db_stimulus_duration"]]
         
-        
-        
-        Full_TVC_table = sw_an.get_TVC_table(args_list)[0]
+        # cell_TVC_table = sw_an_09_12_2025.get_TVC_table(args_list)[0]
+        # print(f'{cell_TVC_table=}')
+
+        cell_TVC_table = sw_an.get_cell_TVC_table(
+             module=module,
+             full_path_to_python_script=full_path_to_python_script,
+             db_function_name=config_line["db_function_name"],
+             db_original_file_directory=db_original_file_directory,
+             cell_id=cell_id,
+             cell_sweep_list=cell_sweep_list,
+             db_cell_sweep_file=db_cell_sweep_file,
+             stimulus_time_provided=config_line["stimulus_time_provided"],
+             db_stimulus_duration=config_line["db_stimulus_duration"])[0]
+
+
+
         
             
-        for current_sweep in sweep_list:
+        for current_sweep in cell_sweep_list:
 
             current_SF_table = SF_group[str(current_sweep)]
             SF_dict = {}
@@ -991,8 +1008,8 @@ def read_cell_file_h5(cell_id, config_line, selection=['All']):
             Full_SF_dict_table = pd.concat([Full_SF_dict_table,
                         new_line_SF], ignore_index=True)
            
-        Full_TVC_table.index = Full_TVC_table.loc[:,"Sweep"]
-        Full_TVC_table.index = Full_TVC_table.index.astype(str)
+        cell_TVC_table.index = cell_TVC_table.loc[:,"Sweep"]
+        cell_TVC_table.index = cell_TVC_table.index.astype(str)
         
         Full_SF_dict_table.index = Full_SF_dict_table["Sweep"]
         Full_SF_dict_table.index = Full_SF_dict_table.index.astype(str)
@@ -1006,9 +1023,9 @@ def read_cell_file_h5(cell_id, config_line, selection=['All']):
             Sweep_analysis_dict, index=Sweep_analysis_dict['Sweep'])
 
         Full_SF_table = sp_an.create_Full_SF_table(
-            Full_TVC_table, Full_SF_dict_table.copy(), sweep_info_table.copy())
+            cell_TVC_table, Full_SF_dict_table.copy(), sweep_info_table.copy())
         
-        
+
 
     if 'Sweep analysis' in selection and 'Sweep analysis' in current_file.keys():
 
@@ -1103,8 +1120,9 @@ def read_cell_file_h5(cell_id, config_line, selection=['All']):
         Processing_report_df = pd.DataFrame(Processing_report_dict)
 
     current_file.close()
+    # print(f'{cell_TVC_table.keys()=}')
     
-    cell_dict['Full_TVC_table'] = Full_TVC_table
+    cell_dict['Full_TVC_table'] = cell_TVC_table
     cell_dict["Full_SF_table"] = Full_SF_table
     cell_dict["Full_SF_dict_table"] = Full_SF_dict_table
     cell_dict['Sweep_info_table'] = sweep_info_table

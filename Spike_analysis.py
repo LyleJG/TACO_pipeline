@@ -43,8 +43,8 @@ def create_cell_Full_SF_dict_table(original_Full_TVC_table, original_cell_sweep_
 
     Full_SF_dict_table=pd.DataFrame(columns=['Sweep',"SF_dict"])
     for current_sweep in sweep_list:
-        
-        current_TVC=ordifunc.get_filtered_TVC_table(Full_TVC_table,current_sweep,do_filter=do_filter,filter=5.,do_plot=False)
+        # LG get_filtered_TVC_table -> get_sweep_TVC_table
+        current_TVC=ordifunc.get_sweep_TVC_table(Full_TVC_table,current_sweep,do_filter=do_filter,filter=5.,do_plot=False)
         current_TVC_copy = current_TVC.copy()
         if BE_correct ==True:
             BE=original_cell_sweep_info_table.loc[current_sweep,'Bridge_Error_GOhms']
@@ -105,8 +105,8 @@ def create_Full_SF_table(original_Full_TVC_table, original_Full_SF_dict, cell_sw
     for current_sweep in sweep_list:
 
         current_sweep = str(current_sweep)
-
-        current_TVC=ordifunc.get_filtered_TVC_table(Full_TVC_table,current_sweep,do_filter=do_filter,filter=5.,do_plot=False)
+        # LG get_filtered_TVC_table -> get_sweep_TVC_table
+        current_TVC=ordifunc.get_sweep_TVC_table(Full_TVC_table,current_sweep,do_filter=do_filter,filter=5.,do_plot=False)
         BE = cell_sweep_info_table.loc[cell_sweep_info_table['Sweep'] == current_sweep,'Bridge_Error_GOhms'].values[0]
         if BE_correct == True and not np.isnan(BE) :
             
@@ -1526,8 +1526,8 @@ def get_cell_spikes_traces(Full_TVC_table, Full_SF_table):
         
         if current_SF_table.shape[0]==0:
             continue
-        
-        current_TVC_table = ordifunc.get_filtered_TVC_table(Full_TVC_table, current_sweep)
+        # LG get_filtered_TVC_table -> get_sweep_TVC_table
+        current_TVC_table = ordifunc.get_sweep_TVC_table(Full_TVC_table, current_sweep)
         peak_table = current_SF_table.loc[current_SF_table['Feature']=='Peak', :]
         peak_table = peak_table.sort_values(by=['Time_s'])
         peak_table = peak_table.reset_index()

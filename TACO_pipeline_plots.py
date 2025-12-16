@@ -1524,11 +1524,11 @@ def plot_BE_TACO_paper_plotly(dict_plot, style_dict=None, saving_path="", return
                 mode="lines", line=dict(color=c["bluish_green"], width=1),
                 name="Full trace 0.5 Hz LPF", legendgroup="Membrane"
             ), row=row, col=col)
-            # fig.add_trace(go.Scatter(
-            #     x=TVC_table["V_pre_Time_s"], y=TVC_table["V_pre_Membrane_potential_0_5_LPF"],
-            #     mode="lines", line=dict(color=c["red"], width=2),
-            #     name="Pre_T 0.5 Hz LPF", legendgroup="Membrane"
-            # ), row=row, col=col)
+            fig.add_trace(go.Scatter(
+                x=TVC_table["Time_s"], y=TVC_table["V_pre_T_0_5_LPF"],
+                mode="lines", line=dict(color=c["reddish_purple"], width=2),
+                name="Pre_T 0.5 Hz LPF", legendgroup="Membrane"
+            ), row=row, col=col)
             fig.add_trace(go.Scatter(
                 x=[actual_transition_time], y=[V_pre_transition_time],
                 mode="markers", marker=dict(color=c["orange"], size=8),
@@ -1685,7 +1685,8 @@ def get_TVC_spike_features_data(
                             ):
 
     # --- Filter TVC table ---
-    current_TVC_table = ordifunc.get_filtered_TVC_table(
+    # LG get_filtered_TVC_table -> get_sweep_TVC_table
+    current_TVC_table = ordifunc.get_sweep_TVC_table(
         Full_TVC_table, current_sweep
     )
 
@@ -1708,7 +1709,8 @@ def get_TVC_spike_features_data(
     # --- For optional superimposed original trace ---
     current_TVC_table_original = None
     if BE_correction and superimpose_BE_correction:
-        current_TVC_table_original = ordifunc.get_filtered_TVC_table(
+        # LG get_filtered_TVC_table -> get_sweep_TVC_table
+        current_TVC_table_original = ordifunc.get_sweep_TVC_table(
             Full_TVC_table, current_sweep
         )
 
