@@ -273,12 +273,12 @@ def perform_firing_related_analysis(cell_Full_SF_table, cell_sweep_info_table,ce
     current_process = "Firing analysis"
     start_time=time.time()
     with warnings.catch_warnings(record=True) as warning_cell_feature_table:
-        # response_duration_dictionary={
-        #     'Time_based':[.005, .010, .025, .050, .100, .250, .500],
-        #     'Index_based':list(np.arange(2,18)),
-        #     'Interval_based':list(np.arange(1,17))}
         response_duration_dictionary={
-            'Time_based':[.500]}
+            'Time_based':[.005, .010, .025, .050, .100, .250, .500],
+            'Index_based':list(np.arange(2,18)),
+            'Interval_based':list(np.arange(1,17))}
+        # response_duration_dictionary={
+        #     'Time_based':[.500]}
         cell_feature_table, cell_fit_table = fir_an.compute_cell_features(cell_Full_SF_table,
                                                                    cell_sweep_info_table,
                                                                    response_duration_dictionary,
