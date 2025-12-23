@@ -42,9 +42,6 @@ def set_globals(sweep_variable_dict):
     globals_module.Time_constant_ms = sweep_variable_dict['Time_constant_ms']
     globals_module.Time_s_trace = sweep_variable_dict['Time_s_trace']
    
-        
-
-
 
 def run_QC_for_cell(Full_TVC, sweep_info_table, QC_function_module, path_to_QC_function_module):
     
@@ -119,15 +116,11 @@ def run_QC_for_cell(Full_TVC, sweep_info_table, QC_function_module, path_to_QC_f
 
     return QC_table, error
 
-
-
-
-
-
 def get_sweep_variable_dict(Full_TVC, sweep_info_table, sweep):
     
     variable_dict = {}
-    raw_traces_TVC = Full_TVC.loc[sweep,'TVC']
+    raw_traces_TVC = (Full_TVC.loc[Full_TVC["Sweep"] == sweep, "TVC"].iloc[0])
+
     variable_dict['Raw_potential_mV_trace'] = np.array(raw_traces_TVC.loc[:,'Membrane_potential_mV'])
     variable_dict["Raw_current_pA_trace"] = np.array(raw_traces_TVC.loc[:,'Input_current_pA'])
     variable_dict["Time_s_trace"] = np.array(raw_traces_TVC.loc[:,'Time_s'])

@@ -70,6 +70,7 @@ def sweep_analysis_processing(cell_TVC_table, cell_stim_time_table):
     cell_sweep_info_table.index = cell_sweep_info_table.loc[:, 'Sweep']
     cell_sweep_info_table.index = cell_sweep_info_table.index.astype(str)
     cell_sweep_info_table.index.name = 'Index'
+   
     
     ### For sweeps whose Brige Error couldn't be estimated, extrapolate from neighboring traces (protocol_wise)
     for current_Protocol in cell_sweep_info_table['Protocol_id'].unique():
@@ -97,7 +98,7 @@ def sweep_analysis_processing(cell_TVC_table, cell_stim_time_table):
         extrapolated_BE_Series.columns = ['Sweep', 'Bridge_Error_GOhms']
         extrapolated_BE = pd.concat(
             [extrapolated_BE,extrapolated_BE_Series], ignore_index=True)
-
+        
     cell_sweep_info_table.pop('Bridge_Error_GOhms')
 
     cell_sweep_info_table = cell_sweep_info_table.merge(
@@ -119,8 +120,7 @@ def sweep_analysis_processing(cell_TVC_table, cell_stim_time_table):
     
     Linear_table=pd.DataFrame(columns=['Sweep',"Time_constant_ms", 'Input_Resistance_GOhms', 'Holding_potential_mV','SS_potential_mV','Resting_potential_mV'])
     cell_sweep_info_table = cell_sweep_info_table.sort_values(by=['Sweep'])
-    stim_start_time_list = list(cell_sweep_info_table.loc[:,'Stim_start_s'])
-    stim_end_time_list = list(cell_sweep_info_table.loc[:,'Stim_end_s'])
+
     BE_extrapolated_list = list(cell_sweep_info_table.loc[:,'Bridge_Error_extrapolated'])
     BE_list = list(cell_sweep_info_table.loc[:,'Bridge_Error_GOhms'])
     stim_amp_list = list(cell_sweep_info_table.loc[:,'Stim_amp_pA'])
@@ -132,9 +132,22 @@ def sweep_analysis_processing(cell_TVC_table, cell_stim_time_table):
         result = get_sweep_linear_properties(x)
         Linear_table = pd.concat([
             Linear_table,result], ignore_index=True)
+        
+    # print("cell_sweep_info_table['Sweep'] value:",
+    #   cell_sweep_info_table['Sweep'].iloc[0],
+    #   type(cell_sweep_info_table['Sweep'].iloc[0]),
+    #   cell_sweep_info_table['Sweep'].dtype)
 
-    cell_sweep_info_table = cell_sweep_info_table.merge(
-        Linear_table, how='inner', on='Sweep')
+    # print("Linear_table['Sweep'] value:",
+    #       Linear_table['Sweep'].iloc[0],
+    #       type(Linear_table['Sweep'].iloc[0]),
+    #       Linear_table['Sweep'].dtype)
+    
+    # breakpoint()
+
+
+    cell_sweep_info_table = cell_sweep_info_table.merge(Linear_table, how='inner', on='Sweep')
+
 
 # LG
     convert_dict = {'Sweep': str,
@@ -170,7 +183,7 @@ def sweep_analysis_processing(cell_TVC_table, cell_stim_time_table):
     cell_sweep_info_table.index = cell_sweep_info_table.loc[:, 'Sweep']
     cell_sweep_info_table.index = cell_sweep_info_table.index.astype(str)
     cell_sweep_info_table.index.name = 'Index'
-   
+
     return cell_sweep_info_table
 
 def get_sweep_info_loop(cell_TVC_table, cell_stim_time_table):
@@ -188,13 +201,15 @@ def get_sweep_info_loop(cell_TVC_table, cell_stim_time_table):
         One Row DataFrame containing different sweep related information.
 
     '''
-    # LG
-    # cell_sweep_info_table = pd.DataFrame(columns=['Sweep', 'Protocol_id', 'Trace_id', 'Stim_SS_pA', 'Holding_current_pA','Stim_amp_pA', 'Stim_start_s', 'Stim_end_s', 'Bridge_Error_GOhms', 'Bridge_Error_extrapolated', 'Sampling_Rate_Hz'])
 
-    for sweep in cell_TVC_table.loc[:,'Sweep']:
+    cell_sweep_info_table = pd.DataFrame(columns=['Sweep', 'Protocol_id', 'Trace_id', 'Stim_SS_pA', 'Holding_current_pA','Stim_amp_pA', 'Stim_start_s', 'Stim_end_s', 'Bridge_Error_GOhms', 'Bridge_Error_extrapolated', 'Sampling_Rate_Hz'])
 
-        stim_start_time = cell_stim_time_table.loc[sweep,'Stim_start_s']
-        stim_end_time = cell_stim_time_table.loc[sweep,'Stim_end_s']
+    for sweep in cell_TVC_table.loc[:,'Sweep']:        
+        sweep_stim_time_table = cell_stim_time_table.loc[cell_stim_time_table["Sweep"] == sweep]
+        stim_start_time = sweep_stim_time_table["Stim_start_s"].iloc[0]
+        stim_end_time   = sweep_stim_time_table["Stim_end_s"].iloc[0]
+        # stim_start_time = cell_stim_time_table.loc[sweep,'Stim_start_s']
+        # stim_end_time = cell_stim_time_table.loc[sweep,'Stim_end_s']
         # LG get_filtered_TVC_table -> get_sweep_TVC_table
         filtered_sweep_TVC = ordifunc.get_sweep_TVC_table(cell_TVC_table, sweep, do_filter=True, filter=5., do_plot=False)
         unfiltered_sweep_TVC = ordifunc.get_sweep_TVC_table(cell_TVC_table, sweep, do_filter=False, filter=5., do_plot=False)
@@ -215,7 +230,8 @@ def get_sweep_info_loop(cell_TVC_table, cell_stim_time_table):
             filtered_sweep_TVC, stim_start_time, stim_end_time,do_plot=False)[:2]
 
         if np.abs((Holding_current-SS_current))>=20.:
-            Bridge_Error = estimate_bridge_error(unfiltered_sweep_TVC, SS_current, stim_start_time, stim_end_time, do_plot=False)[0]
+            Bridge_Error = estimate_bridge_error(unfiltered_sweep_TVC, SS_current,
+                                                 stim_start_time, stim_end_time, do_plot=False)[0]
         else:
             Bridge_Error=np.nan
         
@@ -230,13 +246,13 @@ def get_sweep_info_loop(cell_TVC_table, cell_stim_time_table):
         stim_amp = SS_current - Holding_current
 
         output_line = pd.DataFrame(
-            [str(sweep), str(Protocol_id), Trace_id,SS_current,Holding_current, stim_amp, stim_start_time, stim_end_time, Bridge_Error, BE_extrapolated, sampling_rate]).T
+            [str(sweep), str(Protocol_id), Trace_id,SS_current,Holding_current, stim_amp, 
+             stim_start_time, stim_end_time, Bridge_Error, BE_extrapolated, sampling_rate]).T
         output_line.columns=[
             'Sweep', 'Protocol_id', 'Trace_id', 'Stim_SS_pA', 'Holding_current_pA','Stim_amp_pA', 'Stim_start_s', 'Stim_end_s', 'Bridge_Error_GOhms', 'Bridge_Error_extrapolated', 'Sampling_Rate_Hz']
-        #  LG
-        cell_sweep_info_table = pd.DataFrame(columns=output_line.columns)
+
         cell_sweep_info_table = pd.concat([cell_sweep_info_table, output_line], ignore_index = True)
-    
+
     return cell_sweep_info_table
 
 def get_sweep_linear_properties(sweep_info_list):
@@ -316,6 +332,8 @@ def get_sweep_linear_properties(sweep_info_list):
             
     sweep_line=pd.DataFrame([str(sweep),time_cst,R_in,holding_potential,SS_potential,resting_potential]).T        
     sweep_line.columns=['Sweep',"Time_constant_ms", 'Input_Resistance_GOhms', 'Holding_potential_mV','SS_potential_mV','Resting_potential_mV']
+    
+    # breakpoint()
     
     return sweep_line
 
@@ -557,7 +575,8 @@ def fit_membrane_time_cst_new (original_TVC_table,start_time,end_time,do_plot=Fa
 
 
 
-def estimate_input_resistance_and_resting_potential(original_TVC_table, stim_start_time, stim_end_time, membrane_time_constant, do_plot = False):
+def estimate_input_resistance_and_resting_potential(
+        original_TVC_table, stim_start_time, stim_end_time, membrane_time_constant, do_plot = False):
     """
     Input resistance is estimated by the slope of the linear fit of membrane potential and input current when the stimulus is off(before stim start time and after stim end time) and on (between stim start and stim end)
     To remove any transient membrane potential, a time wondow of 5ms is removed after stim start and stim end times
@@ -1898,15 +1917,115 @@ def get_cell_TVC_table(
     cell_TVC_table = pd.concat(cell_TVC_table_list, ignore_index = True)
     cell_stim_time_table = pd.concat(Stim_time_list, ignore_index = True)
     # return cell_TVC_table, cell_stim_time_table
-    cell_TVC_table.index = cell_TVC_table.loc[:,"Sweep"]
-    cell_TVC_table.index = cell_TVC_table.index.astype(str)
+    # cell_TVC_table.index = cell_TVC_table.loc[:,"Sweep"]
+    # cell_TVC_table.index = cell_TVC_table.index.astype(str)
     
-    cell_stim_time_table.index = cell_stim_time_table.loc[:,"Sweep"]
-    cell_stim_time_table.index = cell_stim_time_table.index.astype(str)
+    # cell_stim_time_table.index = cell_stim_time_table.loc[:,"Sweep"]
+    # cell_stim_time_table.index = cell_stim_time_table.index.astype(str)
+    
+    cell_TVC_table["Sweep"] = cell_TVC_table["Sweep"].astype(str) 
+    cell_stim_time_table["Sweep"] = cell_stim_time_table["Sweep"].astype(str)
+
+
+
     cell_stim_time_table=cell_stim_time_table.astype({'Stim_start_s':float, 'Stim_end_s':float})
 
     return cell_TVC_table, cell_stim_time_table, warning_TVC
+# Original definition
+def original_get_TVC_table(
+        module, full_path_to_python_script=None,
+        db_function_name=None, db_original_file_directory=None,
+        cell_id=None, cell_sweep_list=[], db_cell_sweep_file='',
+        stimulus_time_provided=False, db_stimulus_duration=0):
+    '''
+    Function to be used in Parallel to extract TVC tables, each iteration having a different args list
 
+    Parameters
+    ----------
+    arg_list : List
+        List of parameters required by the function.
+
+    Returns
+    -------
+    sweep_TVC_line : pd.DataFrame
+        2 columns DataFrame first columns 'Sweep' corresponds to Sweep_id, second 'TVC' contains table Contains the Time, Potential, Current
+        
+    stim_time_line : pd.DataFrame
+        3 columns DataFrame first columns 'Sweep' corresponds to Sweep_id, second 'Stim_start_s' contains stimulus start time, Third 'Stim_end_s' contains stimulus end time, 
+
+    '''
+    
+    
+    # module,full_path_to_python_script,db_function_name,db_original_file_directory,cell_id,sweep_list,db_cell_sweep_file,stimulus_time_provided, stimulus_duration  = arg_list
+    
+    Full_TVC_table_list = []
+    Stim_time_list = []
+    spec=importlib.util.spec_from_file_location(module,full_path_to_python_script)
+    DB_module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(DB_module)
+    DB_get_trace_function = getattr(DB_module,db_function_name)
+    if stimulus_time_provided == True:
+
+        time_trace_list, voltage_trace_list, current_trace_list,stimulus_start_list, stimulus_end_list = DB_get_trace_function(db_original_file_directory,
+                                                                                                        cell_id,
+                                                                                                        cell_sweep_list,
+                                                                                                        db_cell_sweep_file)
+        
+        for current_sweep, time_trace, voltage_trace, current_trace, stimulus_start, stimulus_end in zip(cell_sweep_list, 
+                                                                                                 time_trace_list,
+                                                                                                 voltage_trace_list, 
+                                                                                                 current_trace_list,
+                                                                                                 stimulus_start_list, 
+                                                                                                 stimulus_end_list):
+            
+        
+            sweep_TVC = ordifunc.create_TVC(time_trace=time_trace,
+                                                  voltage_trace=voltage_trace,
+                                                  current_trace=current_trace)
+            sweep_TVC_line = pd.DataFrame([str(current_sweep), sweep_TVC]).T
+            sweep_TVC_line.columns = ['Sweep', "TVC"]
+            Full_TVC_table_list.append(sweep_TVC_line)
+            
+            stim_time_line = pd.DataFrame([str(current_sweep), stimulus_start, stimulus_end]).T
+            stim_time_line.columns = ['Sweep','Stim_start_s', 'Stim_end_s']
+            Stim_time_list.append(stim_time_line)
+            
+        
+        
+    else : 
+        time_trace_list, voltage_trace_list, current_trace_list = DB_get_trace_function(db_original_file_directory,
+                                                                                        cell_id,
+                                                                                        cell_sweep_list,
+                                                                                        db_cell_sweep_file)
+        
+        for current_sweep, time_trace, voltage_trace, current_trace, in zip(cell_sweep_list, 
+                                                                            time_trace_list,
+                                                                            voltage_trace_list, 
+                                                                            current_trace_list):
+   
+        
+            sweep_TVC = ordifunc.create_TVC(time_trace=time_trace,
+                                                  voltage_trace=voltage_trace,
+                                                  current_trace=current_trace)
+            stimulus_start,stimulus_end = ordifunc.estimate_trace_stim_limits(sweep_TVC, 
+                                                                                db_stimulus_duration,
+                                                                                do_plot=False)
+            
+            sweep_TVC_line = pd.DataFrame([str(current_sweep), sweep_TVC]).T
+            sweep_TVC_line.columns = ['Sweep', "TVC"]
+            Full_TVC_table_list.append(sweep_TVC_line)
+            
+            stim_time_line = pd.DataFrame([str(current_sweep), stimulus_start, stimulus_end]).T
+            stim_time_line.columns = ['Sweep','Stim_start_s', 'Stim_end_s']
+            Stim_time_list.append(stim_time_line)
+            
+            
+    Full_TVC_table = pd.concat(Full_TVC_table_list, ignore_index = True)
+    stim_time_table = pd.concat(Stim_time_list, ignore_index = True)
+    
+    
+    return Full_TVC_table, stim_time_table
+    
     
 def get_max_frequency_parallel(arg_list):
 

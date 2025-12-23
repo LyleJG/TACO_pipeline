@@ -46,157 +46,110 @@ import TACO_pipeline_plots as TACO_plots
 FAST_INTERACT_INTERVAL = 60
 
 app_ui = ui.page_fluid(
-    ui.h1("Welcome to TACO pipeline"),
-    ui.page_navbar(
-        
-        ui.nav_panel(
-            "Create JSON configuration file",
-            
-            ui.layout_sidebar(
-                ui.sidebar(
-                    ui.h3("Create JSON configuration file"),
-                    ui.output_ui("add_database"),
-                    ui.input_action_button("save_json", "Save JSON"),
-                    ui.output_ui("save_json_status"),
-                    
-                    
-                ),
-                #ui.panel_main(
-                    #ui.layout_column_wrap(
-                        #2,  # Two columns layout
-                        # First column
-                       # ui.panel_main(
-                            ui.input_text(
-                                "json_file_path",
-                                "Enter File Path for Saving JSON file (ending in .json):",
-                                placeholder="Enter full path to save the JSON file, e.g., /path/to/folder/file.json",
-                            ),
-                            ui.input_action_button("check_json_file_path", "Check File Path"),
-                            ui.br(),
-                            ui.output_ui("status_json_file_path"),
-                        #),
-                        # Second column
-                        #ui.panel_main(
-                            ui.input_text(
-                                "Saving_folder_path",
-                                "Enter Saving Directory for Analysis:",
-                                placeholder="Enter path to saving folder, e.g., /path/to/folder/",
-                            ),
-                            ui.input_action_button("check_saving_folder_path", "Check Saving Folder Path"),
-                            ui.br(),
-                            ui.output_ui("status_saving_folder_path"),
-                        #),
-                        # Second column
-                        #ui.panel_main(
-                            ui.input_text(
-                                "Path_to_QC_file",
-                                "Enter Path to Quality Criteria File:",
-                                placeholder="Enter path to QC file, e.g., /path/to/folder/file.py",
-                            ),
-                            ui.input_action_button("check_QC_file_path", "Check QC file path"),
-                            ui.br(),
-                            ui.output_ui("status_QC_file"),
-                        #),
-                        
-
-                    #),
-                    ui.hr(),
-                    #ui.layout_column_wrap(2,
-                        # Third column
-                        #ui.panel_main(
-                            ui.row(
-                                # Row containing the buttons and input field
-                                
-                                ui.input_text(
-                                    "database_name",
-                                    "Enter Database Name:",
-                                    placeholder="Enter the name of the database, e.g., MyDatabase",
-                                ),
-                            ),
-                            ui.row(
-                                ui.column(4,
-                                          ui.input_text(
-                                              "original_file_path",
-                                              "Path to Original File:",
-                                              placeholder="Enter full path to the original file, e.g., /path/to/original/file.csv",
-                                          ),),
-                                ui.column(4, 
-                                          ui.input_action_button("Check_original_file_path", "Check original file path"),),
-                                ui.column(4,
-                                          ui.output_ui("status_original_file_path"),),),
-                                # Row containing the 'original_file_path' input and 'Check original file path' button
-                            ui.row(
-                                ui.column(4,
-                                          ui.input_text(
-                                              "database_python_script_path",
-                                              "Path to database python script:",
-                                              placeholder="e.g., /path/to/original/script.py",
-                                          )),
-                                ui.column(4,
-                                          ui.input_action_button("check_database_python_script_path", "Check database python script")),
-                                ui.column(4,
-                                          ui.output_ui("status_database_script_file")),
-                                ui.column(4,
-                                          ui.output_ui('import_database_script_file'))
-                                ),
-                            ui.row(
-                                ui.column(4,
-                                          ui.input_text(
-                                              "population_class_file",
-                                              "Path to database population class csv file:",
-                                              placeholder="e.g., /path/to/original/file.csv",
-                                          ),),
-                                ui.column(4,
-                                          ui.input_action_button("check_population_class_file_path", "Check database population class csv file")),
-                                ui.column(4,
-                                          ui.output_ui("status_population_class_file"))),
-                            
-                            
-                            ui.row(
-                                ui.column(4,
-                                          ui.input_text(
-                                              "cell_sweep_table_file",
-                                              "Path to database cell sweep csv file:",
-                                              placeholder="e.g., /path/to/original/file.csv",
-                                          ),),
-                                ui.column(4,
-                                          ui.input_action_button("check_cell_sweep_table_file_path", "Check database cell sweep csv file")),
-                                ui.column(4,
-                                          ui.output_ui("status_cell_sweep_table_file"))),
-                            
-                            ui.row(
-                                   ui.column(4,
-                                             ui.input_checkbox("stimulus_time_provided", "Are stimulus start and end times provided?")),
-                                   ui.column(4,
-                                             ui.input_numeric("stimulus_duration", "Indicate stimulus duration in s", 0.5))
-                           
-                                
-                                
-                                
-                                
-                            ),
-                            
-                            ui.input_action_button("Add_Database", "Add Database"),
-                            ui.br(),
-                            
-                            
-                        #),
-                    #)
-                #),
-            ),
-            ),
-        
+    ui.h1("Welcome to TACO pipeline (LG development version)"),
+    ui.page_navbar(       
+        # ui.nav_panel(
+        #     "Create JSON configuration file",            
+        #     ui.layout_sidebar(
+        #         ui.sidebar(
+        #             ui.h3("Create JSON configuration file"),
+        #             ui.output_ui("add_database"),
+        #             ui.input_action_button("save_json", "Save JSON"),
+        #             ui.output_ui("save_json_status"),),
+        #                     ui.input_text(
+        #                         "json_file_path",
+        #                         "Enter File Path for Saving JSON file (ending in .json):",
+        #                         placeholder="Enter full path to save the JSON file, e.g., /path/to/folder/file.json",),
+        #                     ui.input_action_button("check_json_file_path", "Check File Path"),
+        #                     ui.br(),
+        #                     ui.output_ui("status_json_file_path"),
+        #                     ui.input_text(
+        #                         "Saving_folder_path",
+        #                         "Enter Saving Directory for Analysis:",
+        #                         placeholder="Enter path to saving folder, e.g., /path/to/folder/",),
+        #                     ui.input_action_button("check_saving_folder_path", "Check Saving Folder Path"),
+        #                     ui.br(),
+        #                     ui.output_ui("status_saving_folder_path"),
+        #                     ui.input_text(
+        #                         "Path_to_QC_file",
+        #                         "Enter Path to Quality Criteria File:",
+        #                         placeholder="Enter path to QC file, e.g., /path/to/folder/file.py",),
+        #                     ui.input_action_button("check_QC_file_path", "Check QC file path"),
+        #                     ui.br(),
+        #                     ui.output_ui("status_QC_file"),
+        #             ui.hr(),
+        #                     ui.row(# Row containing the buttons and input field                               
+        #                         ui.input_text(
+        #                             "database_name",
+        #                             "Enter Database Name:",
+        #                             placeholder="Enter the name of the database, e.g., MyDatabase",),),
+        #                     ui.row(
+        #                         ui.column(4,
+        #                                   ui.input_text(
+        #                                       "original_file_path",
+        #                                       "Path to Original File:",
+        #                                       placeholder="Enter full path to the original file, e.g., /path/to/original/file.csv",),),
+        #                         ui.column(4, 
+        #                                   ui.input_action_button("Check_original_file_path", "Check original file path"),),
+        #                         ui.column(4,
+        #                                   ui.output_ui("status_original_file_path"),),),
+        #                         # Row containing the 'original_file_path' input and 'Check original file path' button
+        #                     ui.row(
+        #                         ui.column(4,
+        #                                   ui.input_text(
+        #                                       "database_python_script_path",
+        #                                       "Path to database python script:",
+        #                                       placeholder="e.g., /path/to/original/script.py",)),
+        #                         ui.column(4,
+        #                                   ui.input_action_button("check_database_python_script_path", "Check database python script")),
+        #                         ui.column(4,
+        #                                   ui.output_ui("status_database_script_file")),
+        #                         ui.column(4,
+        #                                   ui.output_ui('import_database_script_file'))),
+        #                     ui.row(
+        #                         ui.column(4,
+        #                                   ui.input_text(
+        #                                       "population_class_file",
+        #                                       "Path to database population class csv file:",
+        #                                       placeholder="e.g., /path/to/original/file.csv",),),
+        #                         ui.column(4,
+        #                                   ui.input_action_button("check_population_class_file_path", "Check database population class csv file")),
+        #                         ui.column(4,
+        #                                   ui.output_ui("status_population_class_file"))),
+        #                   ui.row(
+        #                         ui.column(4,
+        #                                   ui.input_text(
+        #                                       "cell_sweep_table_file",
+        #                                       "Path to database cell sweep csv file:",
+        #                                       placeholder="e.g., /path/to/original/file.csv",),),
+        #                         ui.column(4,
+        #                                   ui.input_action_button("check_cell_sweep_table_file_path", "Check database cell sweep csv file")),
+        #                         ui.column(4,
+        #                                   ui.output_ui("status_cell_sweep_table_file"))),                           
+        #                     ui.row(ui.column(4,
+        #                                      ui.input_checkbox("stimulus_time_provided", "Are stimulus start and end times provided?")),
+        #                            ui.column(4,
+        #                                      ui.input_numeric("stimulus_duration", "Indicate stimulus duration in s", 0.5))                                
+        #                     ),                            
+        #                     ui.input_action_button("Add_Database", "Add Database"),
+        #                     ui.br(), ), ),
+       
         ui.nav_panel(
             "Run Analysis",
             ui.input_numeric("n_CPU", "number of CPU cores to use", value=int(os.cpu_count()/2)),
-            ui.input_file("json_file_input", "Upload Json configuration File:"),
+            # LG Explicitly make ui.input_file() return a single file.
+            ui.input_file("json_file_input", "Upload Json configuration File:", multiple=False),
             ui.input_selectize("select_analysis", "Choose Analysis to perform:", {"All":"All" ,
                                                                                "Metadata":"Metadata",
                                                                                "Sweep analysis": "Sweep analysis",
                                                                                "Spike analysis":"Spike analysis",
                                                                                "Firing analysis":"Firing analysis"
                                                                                }, multiple=True, selected="All"),
-            ui.input_select("overwrite_existing_files", "Overwrite existing files?", ['Yes','No']),
+            # ui.input_select("overwrite_existing_files", "Overwrite existing files", choices={"Yes": True, "No": False}, selected=False),
+            ui.input_checkbox("overwrite_existing_files","Overwrite existing files", value=True),
+
+
+            # ui.input_select("overwrite_existing_files", "Overwrite existing files?", ['Yes','No']),
             
             ui.input_action_button("run_analysis", "Run Analysis"),
             ui.output_text_verbatim("script_output"),
@@ -222,7 +175,8 @@ app_ui = ui.page_fluid(
                     "Select Cell",
                     ui.layout_sidebar(
                         ui.sidebar(
-                            ui.input_file("JSON_config_file", 'Choose JSON configuration files'),
+                            # LG Explicitly make ui.input_file() return a single file.
+                            ui.input_file("JSON_config_file", 'Choose JSON configuration files', multiple=False),
                             ui.input_selectize("Cell_file_select", "Select Cell to Analyse", choices=[]),
                             ui.input_action_button('Update_cell_btn', 'Update Cell'),
                         ),
@@ -697,30 +651,96 @@ app_ui = ui.page_fluid(
                 ),
             ),
         ),
+         ui.nav_panel(
+            "Create JSON configuration file",            
+            ui.layout_sidebar(
+                ui.sidebar(
+                    ui.h3("Create JSON configuration file"),
+                    ui.output_ui("add_database"),
+                    ui.input_action_button("save_json", "Save JSON"),
+                    ui.output_ui("save_json_status"),),
+                            ui.input_text(
+                                "json_file_path",
+                                "Enter File Path for Saving JSON file (ending in .json):",
+                                placeholder="Enter full path to save the JSON file, e.g., /path/to/folder/file.json",),
+                            ui.input_action_button("check_json_file_path", "Check File Path"),
+                            ui.br(),
+                            ui.output_ui("status_json_file_path"),
+                            ui.input_text(
+                                "Saving_folder_path",
+                                "Enter Saving Directory for Analysis:",
+                                placeholder="Enter path to saving folder, e.g., /path/to/folder/",),
+                            ui.input_action_button("check_saving_folder_path", "Check Saving Folder Path"),
+                            ui.br(),
+                            ui.output_ui("status_saving_folder_path"),
+                            ui.input_text(
+                                "Path_to_QC_file",
+                                "Enter Path to Quality Criteria File:",
+                                placeholder="Enter path to QC file, e.g., /path/to/folder/file.py",),
+                            ui.input_action_button("check_QC_file_path", "Check QC file path"),
+                            ui.br(),
+                            ui.output_ui("status_QC_file"),
+                    ui.hr(),
+                            ui.row(# Row containing the buttons and input field                               
+                                ui.input_text(
+                                    "database_name",
+                                    "Enter Database Name:",
+                                    placeholder="Enter the name of the database, e.g., MyDatabase",),),
+                            ui.row(
+                                ui.column(4,
+                                          ui.input_text(
+                                              "original_file_path",
+                                              "Path to Original File:",
+                                              placeholder="Enter full path to the original file, e.g., /path/to/original/file.csv",),),
+                                ui.column(4, 
+                                          ui.input_action_button("Check_original_file_path", "Check original file path"),),
+                                ui.column(4,
+                                          ui.output_ui("status_original_file_path"),),),
+                                # Row containing the 'original_file_path' input and 'Check original file path' button
+                            ui.row(
+                                ui.column(4,
+                                          ui.input_text(
+                                              "database_python_script_path",
+                                              "Path to database python script:",
+                                              placeholder="e.g., /path/to/original/script.py",)),
+                                ui.column(4,
+                                          ui.input_action_button("check_database_python_script_path", "Check database python script")),
+                                ui.column(4,
+                                          ui.output_ui("status_database_script_file")),
+                                ui.column(4,
+                                          ui.output_ui('import_database_script_file'))),
+                            ui.row(
+                                ui.column(4,
+                                          ui.input_text(
+                                              "population_class_file",
+                                              "Path to database population class csv file:",
+                                              placeholder="e.g., /path/to/original/file.csv",),),
+                                ui.column(4,
+                                          ui.input_action_button("check_population_class_file_path", "Check database population class csv file")),
+                                ui.column(4,
+                                          ui.output_ui("status_population_class_file"))),
+                          ui.row(
+                                ui.column(4,
+                                          ui.input_text(
+                                              "cell_sweep_table_file",
+                                              "Path to database cell sweep csv file:",
+                                              placeholder="e.g., /path/to/original/file.csv",),),
+                                ui.column(4,
+                                          ui.input_action_button("check_cell_sweep_table_file_path", "Check database cell sweep csv file")),
+                                ui.column(4,
+                                          ui.output_ui("status_cell_sweep_table_file"))),                           
+                            ui.row(ui.column(4,
+                                             ui.input_checkbox("stimulus_time_provided", "Are stimulus start and end times provided?")),
+                                   ui.column(4,
+                                             ui.input_numeric("stimulus_duration", "Indicate stimulus duration in s", 0.5))                                
+                            ),                            
+                            ui.input_action_button("Add_Database", "Add Database"),
+                            ui.br(), ), ),
+       
     ),
     fill=True
 )
 
-# LG Need to rewrite clearly
-def import_json_config_files_to_config_df(config_pointers, arg_from_ui=True):
-    i=0
-    for pointer in config_pointers:
-        if isinstance(pointer, dict):
-            file_path = pointer['datapath']
-        else:
-            file_path = pointer
-
-        if not os.path.exists(file_path):
-            raise FileNotFoundError(f"File not found: {file_path}")
-        if i == 0:
-            config_df = ordifunc.open_json_config_file(file_path)
-            i+=1
-            
-        else:
-            new_table = ordifunc.open_json_config_file(file_path)
-            config_df=pd.concat([config_df, new_table],ignore_index = True)
-            
-    return config_df
 
 def estimate_processing_time(start_time, total_iteration,i):
     process_time = time.time()-start_time
@@ -1775,10 +1795,6 @@ def server(input: Inputs, output: Outputs, session: Session):
         
         return ui.HTML(f"<span style='color:green;'><b>JSON file saved successfully to:</b> {json_file_path}</span>")
         
-    
-    
-
-    
         
     @output
     @render.text
@@ -1788,44 +1804,30 @@ def server(input: Inputs, output: Outputs, session: Session):
         This function runs the analysis according to the JSON configuration file, as well as the parameters defined by the users (CPU cores, overwriting of exisiting files,... )
         The function displys the progression of the analysis in the GUI
         
-        The function returns the list of cell id for which the analysis failed
-        
+        The function returns the list of cell id for which the analysis failed       
 
         """
         # Get inputs
         problem_cell = []
 
         if not input.json_file_input():
-            return "No file uploaded."
+            return "No TACO config file uploaded."
         else:
-
-            # LG Change e.g. config_json_file -> config_json_file_df
-            # json_config_file=[{'name': 'config_json_file_test_lg.json', 'size': 909,
-            #                    'type': 'application/json',
-            #                    'datapath': '/tmp/fileupload-mz7oynv3/tmpn421445y/0.json'}]
-
-            config_pointers = input.json_file_input()
-            config_df = import_json_config_files_to_config_df(config_pointers)
-            
             #GEt nb of CPU cores to use
-            nb_of_workers_to_use = int(input.n_CPU())
-            if nb_of_workers_to_use == 0:
-                nb_of_workers_to_use = 1
-            
+            nb_of_workers_to_use = max(1, min(int(input.n_CPU()), os.cpu_count() or 1))
             analysis = input.select_analysis()
-            overwrite_files_yes_no = input.overwrite_existing_files()
-            if overwrite_files_yes_no == 'Yes':
-                overwrite_files = True
-            elif overwrite_files_yes_no == 'No':
-                overwrite_files = False
-            
-            path_to_saving_file = config_df.loc[0,'path_to_saving_file']
-            path_to_QC_file = config_df.loc[0,'path_to_QC_file']
-            
-            for config_files_idx in config_df.index:
-                current_db = config_df.loc[config_files_idx,:].to_dict()
-                database_name = current_db["database_name"]
-                db_cell_sweep_file = pd.read_csv(current_db['db_cell_sweep_csv_file'],sep =',',encoding = "unicode_escape")
+            overwrite_files = input.overwrite_existing_files() # True / False
+            # LG N.B. input.json_file_input() returns a list of one file spec dictionary, e.g.:
+            # [{'name': 'config_json_file_test_lg.json', 'size': 909, 'type': 'application/json',
+            #   'datapath': '/tmp/fileupload-mz7oynv3/tmpn421445y/0.json'}]
+            # ref. ui.input_file("json_file_input", "Upload Json configuration File:", multiple=False)
+            # N.B. analysis_pipeline.cell_processing() also gets db_spec by extracting config_df from TACO_config_file and referencing db_spec_idx.
+            TACO_config_file=input.json_file_input()[0]['datapath']
+            config_df = ordifunc.get_TACO_config_file_df(TACO_config_file)                  
+            for db_spec_idx in config_df.index:
+                db_spec = config_df.loc[db_spec_idx,:].to_dict()
+                database_name = db_spec["database_name"]
+                db_cell_sweep_file = pd.read_csv(db_spec['db_cell_sweep_csv_file'],sep =',',encoding = "unicode_escape")
                 cell_id_list = db_cell_sweep_file['Cell_id'].unique()
                 # LG Why shuffle?
                 random.shuffle(cell_id_list)
@@ -1835,8 +1837,8 @@ def server(input: Inputs, output: Outputs, session: Session):
                         problem_cell_list = {executor.submit(
                             analysis_pipeline.cell_processing,
                             cell_id,
-                            config_files_idx=config_files_idx,
-                            config_pointers=config_pointers,
+                            TACO_config_file=TACO_config_file,
+                            db_spec_idx=db_spec_idx,
                             analysis=analysis,
                             overwrite_files=overwrite_files): cell_id for cell_id in cell_id_list}
                         i=1
@@ -1854,7 +1856,7 @@ def server(input: Inputs, output: Outputs, session: Session):
             
             print('Done')
             return f'Problem occured with cells : {problem_cell}'
-    
+
     @output
     @render.ui
     @reactive.event(input.check_saving_summary_folder_path)
@@ -1895,12 +1897,10 @@ def server(input: Inputs, output: Outputs, session: Session):
         if not input.json_file_input():
             return "No file uploaded."
         else:
-            config_pointers = input.json_file_input()
-
-            # LG Change e.g. config_json_file -> config_json_file_df
-            # json_config_file is a list of dicts?
-            config_json_file = import_json_config_files_to_config_df(config_pointers)
-            
+            # LG N.B. input.json_file_input() returns a list of one file spec dictionary
+            TACO_config_file=input.json_file_input()[0]['datapath']
+            config_df = ordifunc.get_TACO_config_file_df(TACO_config_file)
+    
         saving_path = input.summary_folder_path()
         if not saving_path.endswith(os.path.sep):
             saving_path += os.path.sep
@@ -1941,8 +1941,8 @@ def server(input: Inputs, output: Outputs, session: Session):
         #Create the Full population class table
         Full_population_class_table = pd.DataFrame()
         
-        for line in config_json_file.index:
-            current_db_population_class_table = pd.read_csv(config_json_file.loc[line,'db_population_class_file'])
+        for line in config_df.index:
+            current_db_population_class_table = pd.read_csv(config_df.loc[line,'db_population_class_file'])
             Full_population_class_table= pd.concat([Full_population_class_table,current_db_population_class_table],ignore_index = True)
         Full_population_class_table=Full_population_class_table.astype({'Cell_id':'str'})
         cell_id_list = Full_population_class_table.loc[:,'Cell_id'].unique()
@@ -1959,7 +1959,7 @@ def server(input: Inputs, output: Outputs, session: Session):
                 try:
                     #Get the database from which the cell comes from, and the corresponding information
                     current_DB = Full_population_class_table.loc[Full_population_class_table['Cell_id']==cell_id,'Database'].values[0]
-                    config_line = config_json_file.loc[config_json_file['database_name']==current_DB,:]
+                    config_line = config_df.loc[config_df['database_name']==current_DB,:]
                     
                     #Open the cell analysis file
                     cell_dict = ordifunc.read_cell_file_h5(str(cell_id),config_line,['Sweep analysis','Firing analysis','Processing_report', "Sweep QC"])
@@ -2331,11 +2331,11 @@ def server(input: Inputs, output: Outputs, session: Session):
             for file in config_json_input:
                 file_path = file['datapath']
                 if i == 0:
-                    config_df = ordifunc.open_json_config_file(file_path)
+                    config_df = ordifunc.get_TACO_config_file_df(file_path)
                     i+=1
                     
                 else:
-                    new_table = ordifunc.open_json_config_file(file_path)
+                    new_table = ordifunc.get_TACO_config_file_df(file_path)
                     config_df=pd.concat([config_df, new_table],ignore_index = True)
             return config_df
         

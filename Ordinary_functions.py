@@ -5,7 +5,7 @@ Created on Mon Dec  4 15:36:59 2023
 
 @author: julienballbe
 """
-
+import os
 import pandas as pd
 import numpy as np
 import plotnine as p9
@@ -23,93 +23,89 @@ import json
 import concurrent.futures
 
 
-def get_upstroke_dowstroke_and_intervals(args_list):
-    """
-    This function detect the fist sweep with at least 5 spikes and gather the first spike upstroke and downstroke derivatives
-    as well as the first sweep with at least 10 spikes and gather the first and 10th ISI
+# def get_upstroke_dowstroke_and_intervals(args_list):
+#     """
+#     This function detect the fist sweep with at least 5 spikes and gather the first spike upstroke and downstroke derivatives
+#     as well as the first sweep with at least 10 spikes and gather the first and 10th ISI
 
-    Parameters
-    ----------
-    args_list : List
-        list containting cell_id and config_line to open cell file.
+#     Parameters
+#     ----------
+#     args_list : List
+#         list containting cell_id and config_line to open cell file.
 
-    Returns
-    -------
-    new_line : pd.DataFrame
+#     Returns
+#     -------
+#     new_line : pd.DataFrame
         
 
-    """
-    cell_id,config_line = args_list
-    try:
+#     """
+#     cell_id,config_line = args_list
+#     try:
         
-        cell_dict = read_cell_file_h5(str(cell_id),config_line,["All"])
-        Full_SF_table = cell_dict['Full_SF_table']
-        sweep_info_table = cell_dict['Sweep_info_table']
+#         cell_dict = read_cell_file_h5(str(cell_id),config_line,["All"])
+#         Full_SF_table = cell_dict['Full_SF_table']
+#         sweep_info_table = cell_dict['Sweep_info_table']
         
         
-        sweep_info_table = sweep_info_table.sort_values(by=['Stim_amp_pA'])
-        cell_sweep_list = np.array(sweep_info_table.loc[:,'Sweep'])
-        first_upstroke_deriv, first_downstroke_deriv, first_interval, tenth_interval, first_sweep_with_five, first_sweep_with_ten = [np.nan]*6
-        Obs='--'
+#         sweep_info_table = sweep_info_table.sort_values(by=['Stim_amp_pA'])
+#         cell_sweep_list = np.array(sweep_info_table.loc[:,'Sweep'])
+#         first_upstroke_deriv, first_downstroke_deriv, first_interval, tenth_interval, first_sweep_with_five, first_sweep_with_ten = [np.nan]*6
+#         Obs='--'
         
-        for current_sweep in cell_sweep_list:
-            SF_table = Full_SF_table.loc[current_sweep, "SF"]
+#         for current_sweep in cell_sweep_list:
+#             SF_table = Full_SF_table.loc[current_sweep, "SF"]
             
-            peak_table = SF_table.loc[SF_table['Feature']=='Peak',:]
-            if peak_table.shape[0] ==0:
-                continue
-            elif peak_table.shape[0] >=5 : # Get forst sweep with at least 5 spikes, and get forst spike's Up/Downstroke ratio
-                SF_table = SF_table.sort_values(by=['Time_s'])
-                upstroke_table = SF_table.loc[SF_table['Feature']=="Upstroke",:]
-                upstroke_table=upstroke_table.reset_index(drop=True)
-                first_upstroke_deriv = upstroke_table.loc[0,"Potential_first_time_derivative_mV/s"]
+#             peak_table = SF_table.loc[SF_table['Feature']=='Peak',:]
+#             if peak_table.shape[0] ==0:
+#                 continue
+#             elif peak_table.shape[0] >=5 : # Get forst sweep with at least 5 spikes, and get forst spike's Up/Downstroke ratio
+#                 SF_table = SF_table.sort_values(by=['Time_s'])
+#                 upstroke_table = SF_table.loc[SF_table['Feature']=="Upstroke",:]
+#                 upstroke_table=upstroke_table.reset_index(drop=True)
+#                 first_upstroke_deriv = upstroke_table.loc[0,"Potential_first_time_derivative_mV/s"]
                 
-                downstroke_table = SF_table.loc[SF_table['Feature']=="Downstroke",:]
-                downstroke_table=downstroke_table.reset_index(drop=True)
-                first_downstroke_deriv = downstroke_table.loc[0,"Potential_first_time_derivative_mV/s"]
+#                 downstroke_table = SF_table.loc[SF_table['Feature']=="Downstroke",:]
+#                 downstroke_table=downstroke_table.reset_index(drop=True)
+#                 first_downstroke_deriv = downstroke_table.loc[0,"Potential_first_time_derivative_mV/s"]
                 
-                first_sweep_with_five = current_sweep
-                break
+#                 first_sweep_with_five = current_sweep
+#                 break
                 
-        for current_sweep in cell_sweep_list:
-            SF_table = Full_SF_table.loc[current_sweep, "SF"]
+#         for current_sweep in cell_sweep_list:
+#             SF_table = Full_SF_table.loc[current_sweep, "SF"]
             
-            peak_table = SF_table.loc[SF_table['Feature']=='Peak',:]
+#             peak_table = SF_table.loc[SF_table['Feature']=='Peak',:]
             
-            if peak_table.shape[0] ==0:
-                continue
+#             if peak_table.shape[0] ==0:
+#                 continue
             
-            elif peak_table.shape[0] >=10 : #Get first sweep with at least 10 spikes and get forst and tenth ISI
-                SF_table = SF_table.sort_values(by=['Time_s'])
-                peak_table = peak_table.reset_index(drop=True)
-                first_interval = peak_table.loc[1,'Time_s'] - peak_table.loc[0,'Time_s']
+#             elif peak_table.shape[0] >=10 : #Get first sweep with at least 10 spikes and get forst and tenth ISI
+#                 SF_table = SF_table.sort_values(by=['Time_s'])
+#                 peak_table = peak_table.reset_index(drop=True)
+#                 first_interval = peak_table.loc[1,'Time_s'] - peak_table.loc[0,'Time_s']
                 
-                tenth_interval = peak_table.loc[9,'Time_s'] - peak_table.loc[8,'Time_s']
+#                 tenth_interval = peak_table.loc[9,'Time_s'] - peak_table.loc[8,'Time_s']
                 
-                first_sweep_with_ten = current_sweep
-                break
-    except:
-        error= traceback.format_exc()
-        first_upstroke_deriv, first_downstroke_deriv, first_interval, tenth_interval, first_sweep_with_five, first_sweep_with_ten = [np.nan]*6
-        Obs = error
-    new_line = pd.DataFrame([str(cell_id), Obs, first_sweep_with_five, first_upstroke_deriv, first_downstroke_deriv, first_sweep_with_ten,first_interval, tenth_interval]).T
-    new_line.columns = ['Cell_id','Obs','First_sweep_with_five_spikes', 'First_upstroke_Potential_derivative','First_downstroke_Potential_derivative', 'First_sweep_with_ten_spikes',"First_spike_interval", "Tenth_spike_interval"]
+#                 first_sweep_with_ten = current_sweep
+#                 break
+#     except:
+#         error= traceback.format_exc()
+#         first_upstroke_deriv, first_downstroke_deriv, first_interval, tenth_interval, first_sweep_with_five, first_sweep_with_ten = [np.nan]*6
+#         Obs = error
+#     new_line = pd.DataFrame([str(cell_id), Obs, first_sweep_with_five, first_upstroke_deriv, first_downstroke_deriv, first_sweep_with_ten,first_interval, tenth_interval]).T
+#     new_line.columns = ['Cell_id','Obs','First_sweep_with_five_spikes', 'First_upstroke_Potential_derivative','First_downstroke_Potential_derivative', 'First_sweep_with_ten_spikes',"First_spike_interval", "Tenth_spike_interval"]
     
    
     
-    return new_line
+#     return new_line
 
-# LG change
-
+# LG Hack for now, should not be needed...
 def frame_with_nans(time_full, trace_subset_start, trace_subset):
     NaN_padded_trace_subset = np.full(time_full.shape, np.nan, dtype=float)
-
     start_idx = np.searchsorted(time_full, trace_subset_start)
     end_idx   = start_idx + len(trace_subset)
-
     if end_idx > len(time_full):
         raise ValueError("trace_subset length exceeds available time window")
-
     NaN_padded_trace_subset[start_idx:end_idx] = trace_subset
     return NaN_padded_trace_subset
 
@@ -179,7 +175,14 @@ def get_sweep_TVC_table(cell_TVC_table,sweep,do_filter=True,filter=5.,do_plot=Fa
     '''
     
     # cell_TVC_table = original_cell_TVC_table.copy()
-    sweep_TVC_table=cell_TVC_table.loc[str(sweep),'TVC'].copy()
+    # breakpoint()
+    # sweep_TVC_table=cell_TVC_table.loc[str(sweep),'TVC'].copy()
+    sweep_TVC_table = (
+    cell_TVC_table
+    .loc[cell_TVC_table["Sweep"] == sweep, "TVC"]
+    .iloc[0]
+    .copy()
+)
 
     if do_filter:
         #Filter membrane potential and input current traces
@@ -391,280 +394,148 @@ def get_derivative(value_trace, time_trace, start_time_sec=None,end_time_sec=Non
 
     return trace_derivative
 
-def write_cell_file_h5(cell_file_path,
-                       saving_dict,
-                       overwrite=False,
-                       selection=['All']):
-    '''
-    Create a hdf5 file for a given cell file path (or overwrite existing one if required) and store results of the analysis.
+import h5py
+import numpy as np
+import pandas as pd
 
-    Parameters
-    ----------
-    cell_file_path : str
-        File path to which store cell file.
-        
-    original_Full_SF_dict : pd.DataFrame
-        DataFrame, two columns. For each row, first column ('Sweep') contains Sweep_id, and 
-        second column ('SF') contains a Dict in which the keys correspond to a spike-related feature, and the value to an array of time index (correspondance to sweep related TVC table)
-        
-    original_cell_sweep_info_table : pd.DataFrame
-        DataFrame containing the information about the different traces for each sweep (one row per sweep).
-        
-    original_cell_sweep_QC : pd.DataFrame
-        DataFrame specifying for each Sweep wether it has passed Quality Criteria. 
-        
-    original_cell_fit_table : pd.DataFrame
-        DataFrame containing for each pair of response type - output duration the fit parameters to reconstruct I/O curve and adaptation curve.
-        
-    original_cell_feature_table : pd.DataFrame
-        DataFrame containing for each pair of response type - output duration the Adaptation and I/O features.
-        
-    original_Metadata_table : pd.DataFrame
-        DataFrame containing cell metadata.
-    
-    original_processing_table : pd.DataFrame
-        DataFrame containing for each part of the analysis the processing time 
-        as well as one row per Error or Warning encountered during the analysis
-        
-    overwrite : Bool, optional
-        Wether to overwrite already existing information, if for a given cell_id, a cell file already exists in saving_folder_path
-        The default is False.
+# LG Automatically detect dtype('O') in pandas DataFrames and converts those columns to strings before writing to HDF5
+def create_h5_dataset(group, name, series):
+    arr = np.asarray(series)
+
+    if arr.dtype == object:
+        # Explicit variable-length UTF-8 strings
+        dt = h5py.string_dtype(encoding='utf-8')
+        group.create_dataset(name, data=arr.astype(str), dtype=dt)
+    else:
+        group.create_dataset(name, data=arr)
 
 
+def write_cell_file_h5(cell_file_path, saving_dict, overwrite=False, selection=['All']):
+    """
+    Create an HDF5 file for a given cell file path (or overwrite existing one if required)
+    and store results of the analysis.
 
-    '''
-
-
+    Converts object/Unicode columns in DataFrames to UTF-8 strings for HDF5 compatibility.
+    """
     file = h5py.File(cell_file_path, "a")
-    
+
     if "All" in selection:
-        selection = ["Metadata","Sweep analysis", "Spike analysis", "Firing analysis"]
+        selection = ["Metadata", "Sweep analysis", "Spike analysis",
+                     "Firing analysis", "Processing report"]
+
+    string_dt = h5py.string_dtype(encoding="utf-8")
+
+    # ------------------------------------------------------------
+    # Low-level safe dataset creator
+    # ------------------------------------------------------------
+    def create_dataset_safe(group, name, series, path=""):
+        """
+        Safely create HDF5 dataset from array-like data.
+        Fully converts mixed/object data to UTF-8 strings.
+        """
+        import h5py
+        import numpy as np
+        import pandas as pd
     
-    if "Metadata" in saving_dict.keys():
-        original_Metadata_table = saving_dict["Metadata"]
-        
-        if 'Metadata' in file.keys() and overwrite == True:
-            del file["Metadata"]
-            if isinstance(original_Metadata_table,dict) == True:
-                Metadata_group = file.create_group('Metadata')
-                for elt in original_Metadata_table.keys():
-        
-                    Metadata_group.create_dataset(
-                        str(elt), data=original_Metadata_table[elt])
-        elif 'Metadata' not in file.keys():
-            if isinstance(original_Metadata_table,dict) == True:
-                Metadata_group = file.create_group('Metadata')
-                for elt in original_Metadata_table.keys():
-        
-                    Metadata_group.create_dataset(
-                        str(elt), data=original_Metadata_table[elt])
-                
-            
-    if "Spike analysis" in saving_dict.keys():
-        original_Full_SF_dict = saving_dict["Spike analysis"]
-        
-        if 'Spike analysis' in file.keys() and overwrite == True:
-            del file["Spike analysis"]
-            if isinstance(original_Full_SF_dict,pd.DataFrame) == True:
-                SF_group = file.create_group("Spike analysis")
-                
-                cell_sweep_list = np.array(original_Full_SF_dict['Sweep'])
-                for current_sweep in cell_sweep_list:
-                    
-                    current_SF_dict = original_Full_SF_dict.loc[current_sweep, "SF_dict"]
-                    current_SF_group = SF_group.create_group(str(current_sweep))
-                    for elt in current_SF_dict.keys():
-        
-                        if len(current_SF_dict[elt]) != 0:
-                            current_SF_group.create_dataset(
-                                str(elt), data=current_SF_dict[elt])
+        arr = np.asarray(series)
     
-        elif 'Spike analysis' not in file.keys():
-            if isinstance(original_Full_SF_dict,pd.DataFrame) == True:
-                cell_sweep_list = np.array(original_Full_SF_dict['Sweep'])
-                SF_group = file.create_group("Spike analysis")
-                
-                for current_sweep in cell_sweep_list:
-        
-                    current_SF_dict = original_Full_SF_dict.loc[current_sweep, "SF_dict"]
-                    current_SF_group = SF_group.create_group(str(current_sweep))
-                    for elt in current_SF_dict.keys():
-        
-                        if len(current_SF_dict[elt]) != 0:
-                            current_SF_group.create_dataset(
-                                str(elt), data=current_SF_dict[elt])
-               
-    if "Sweep analysis" in saving_dict.keys():
-        sweep_analysis_dict = saving_dict["Sweep analysis"]
-        original_cell_sweep_info_table = sweep_analysis_dict['Sweep info']
-        original_cell_sweep_QC = sweep_analysis_dict['Sweep QC']
-        
-        if 'Sweep analysis' in file.keys() and overwrite == True:
-            
-            del file["Sweep analysis"]
-            if isinstance(original_cell_sweep_info_table,pd.DataFrame) == True:
-                cell_sweep_info_table_group = file.create_group('Sweep analysis')
-                cell_sweep_list=np.array(original_cell_sweep_info_table['Sweep'])
-        
-                for elt in np.array(original_cell_sweep_info_table.columns):
-                    cell_sweep_info_table_group.create_dataset(
-                        elt, data=np.array(original_cell_sweep_info_table[elt]))
-                   
+        # Detect string / object / unicode
+        if arr.dtype == object or arr.dtype.kind in {"U", "S"}:    
+            # print(f"[INFO] Writing '{path}/{name}' as UTF-8 string dataset")    
+            # Convert EVERY element to Python str (including NaN)
+            arr_str = np.array(
+                [
+                    "" if pd.isna(x) else str(x)
+                    for x in arr
+                ],
+                dtype=object
+            )
     
-        elif 'Sweep analysis' not in file.keys():
-            if isinstance(original_cell_sweep_info_table,pd.DataFrame) == True:
-                cell_sweep_info_table_group = file.create_group('Sweep analysis')
-                for elt in np.array(original_cell_sweep_info_table.columns):
-                    cell_sweep_info_table_group.create_dataset(
-                        elt, data=np.array(original_cell_sweep_info_table[elt]))
-                    
-            
-        
-        if isinstance(original_cell_sweep_QC,pd.DataFrame) == True:
-            convert_dict = {}
-            for col in original_cell_sweep_QC.columns:
-                if col == "Sweep":
-                    convert_dict[col]=str
-                else:
-                    convert_dict[col]=bool
-          
-        
-            original_cell_sweep_QC = original_cell_sweep_QC.astype(convert_dict)
-    
-        if 'Sweep_QC' in file.keys() and overwrite == True:
-            del file['Sweep_QC']
-            if isinstance(original_cell_sweep_QC,pd.DataFrame) == True:
-                cell_sweep_QC_group = file.create_group("Sweep_QC")
-                for elt in np.array(original_cell_sweep_QC.columns):
-                    
-                    cell_sweep_QC_group.create_dataset(
-                        elt, data=np.array(original_cell_sweep_QC[elt]))
-        elif 'Sweep_QC' not in file.keys():
-            if isinstance(original_cell_sweep_QC,pd.DataFrame) == True:
-                cell_sweep_QC_group = file.create_group("Sweep_QC")
-                for elt in np.array(original_cell_sweep_QC.columns):
-                    
-                    cell_sweep_QC_group.create_dataset(
-                        elt, data=np.array(original_cell_sweep_QC[elt]))
-            
-    
-    if 'Firing analysis' in saving_dict.keys():
-        Firing_analysis_dict = saving_dict["Firing analysis"]
-        original_cell_feature_table = Firing_analysis_dict['Cell_feature']
-        original_cell_fit_table = Firing_analysis_dict['Cell_fit']
-        original_cell_adaptation_table = Firing_analysis_dict['Cell_Adaptation']
-        if 'Cell_Feature' in file.keys() and overwrite == True:
-            del file["Cell_Feature"]
-            if isinstance(original_cell_feature_table,pd.DataFrame) == True:
-                cell_feature_group = file.create_group('Cell_Feature')
-                for elt in np.array(original_cell_feature_table.columns):
-                    cell_feature_group.create_dataset(
-                        elt, data=np.array(original_cell_feature_table[elt]))
-            
-            del file['Cell_Fit']
-            if isinstance(original_cell_fit_table,pd.DataFrame) == True:
-                cell_fit_group = file.create_group('Cell_Fit')
-                for elt in np.array(original_cell_fit_table.columns):
-                    cell_fit_group.create_dataset(
-                        elt, data=np.array(original_cell_fit_table[elt]))
-                    
-            del file['Cell_Adaptation']
-            if isinstance(original_cell_adaptation_table,pd.DataFrame) == True:
-                cell_adaptation_group = file.create_group('Cell_Adaptation')
-                for elt in np.array(original_cell_adaptation_table.columns):
-                    if elt in ['Obs','Feature','Measure']:
-                        original_cell_adaptation_table = original_cell_adaptation_table.astype({elt:str})
-                    else:
-                        original_cell_adaptation_table = original_cell_adaptation_table.astype({elt:float})
-                    cell_adaptation_group.create_dataset(
-                        elt, data=np.array(original_cell_adaptation_table[elt]))
-                
-    
-            
-    
-        elif 'Cell_Feature' not in file.keys():
-            if isinstance(original_cell_feature_table,pd.DataFrame) == True:
-                cell_feature_group = file.create_group('Cell_Feature')
-                for elt in np.array(original_cell_feature_table.columns):
-                    cell_feature_group.create_dataset(
-                        elt, data=np.array(original_cell_feature_table[elt]))
-           
-    
-            # Store Cell fit table
-            if isinstance(original_cell_fit_table,pd.DataFrame) == True:
-                cell_fit_group = file.create_group('Cell_Fit')
-                
-        
-                for elt in np.array(original_cell_fit_table.columns):
-                    
-                    cell_fit_group.create_dataset(
-                        elt, data=np.array(original_cell_fit_table[elt]))
-                    
-            if isinstance(original_cell_adaptation_table,pd.DataFrame) == True:
-                cell_adaptation_group = file.create_group('Cell_Adaptation')
-                for elt in np.array(original_cell_adaptation_table.columns):
-                    if elt in ['Obs','Feature','Measure']:
-                        original_cell_adaptation_table = original_cell_adaptation_table.astype({elt:str})
-                    else:
-                        original_cell_adaptation_table = original_cell_adaptation_table.astype({elt:float})
-                    cell_adaptation_group.create_dataset(
-                        elt, data=np.array(original_cell_adaptation_table[elt]))
-                
-    #store processing report
-    if "Processing report" in saving_dict.keys():
-        original_processing_table = saving_dict["Processing report"]
-        if 'Processing_report' in file.keys() and overwrite == True:
-            del file["Processing_report"]
-            if isinstance(original_processing_table,pd.DataFrame) == True:
-                processing_report_group = file.create_group('Processing_report')
-                for elt in np.array(original_processing_table.columns):
-                    processing_report_group.create_dataset(
-                        elt, data=np.array(original_processing_table[elt]))
-                
-        elif 'Processing_report' not in file.keys():
-            if isinstance(original_processing_table,pd.DataFrame) == True:
-                processing_report_group = file.create_group('Processing_report')
-                for elt in np.array(original_processing_table.columns):
-                    processing_report_group.create_dataset(
-                        elt, data=np.array(original_processing_table[elt]))
-           
-                
-    
+            dt = h5py.string_dtype(encoding="utf-8")
+            group.create_dataset(name, data=arr_str, dtype=dt)    
+        else:
+            group.create_dataset(name, data=arr)
+
+    # ------------------------------------------------------------
+    # Write DataFrame safely
+    # ------------------------------------------------------------
+    def write_dataframe(group_name, df):
+        if not isinstance(df, pd.DataFrame):
+            return    
+        if group_name in file and overwrite:
+            del file[group_name]    
+        grp = file.create_group(group_name)    
+        for col in df.columns:
+            create_dataset_safe(
+                grp,
+                col,
+                df[col].to_numpy(),
+                f"/{group_name}")
+
+    # ------------------ Metadata ------------------
+    if "Metadata" in saving_dict:
+        meta = saving_dict["Metadata"]
+        if isinstance(meta, dict):
+            if "Metadata" in file and overwrite:
+                del file["Metadata"]
+            meta_grp = file.create_group("Metadata")
+            for k, v in meta.items():
+                meta_grp.create_dataset(str(k), data=v)
+
+    # ------------------ Spike analysis ------------------
+    if "Spike analysis" in saving_dict:
+        sf_df = saving_dict["Spike analysis"]
+        if isinstance(sf_df, pd.DataFrame):
+            if "Spike analysis" in file and overwrite:
+                del file["Spike analysis"]
+
+            sf_grp = file.create_group("Spike analysis")
+            for sweep in sf_df.index:
+                sf_dict = sf_df.loc[sweep, "SF_dict"]
+                sweep_grp = sf_grp.create_group(str(sweep))
+                for key, val in sf_dict.items():
+                    if len(val) > 0:
+                        sweep_grp.create_dataset(str(key), data=np.asarray(val))
+
+    # ------------------ Sweep analysis ------------------
+    if "Sweep analysis" in saving_dict:
+        sweep_dict = saving_dict["Sweep analysis"]
+        write_dataframe("Sweep analysis", sweep_dict.get("Sweep info"))
+        write_dataframe("Sweep_QC", sweep_dict.get("Sweep QC"))
+
+    # ------------------ Firing analysis ------------------
+    if "Firing analysis" in saving_dict:
+        firing = saving_dict["Firing analysis"]
+        write_dataframe("Cell_Feature", firing.get("Cell_feature"))
+        write_dataframe("Cell_Fit", firing.get("Cell_fit"))
+        write_dataframe("Cell_Adaptation", firing.get("Cell_Adaptation"))
+
+    # ------------------ Processing report ------------------
+    if "Processing report" in saving_dict:
+        write_dataframe("Processing_report", saving_dict["Processing report"])
 
     file.close()
-    
+
 # LG Change name
-def open_json_config_file(config_file):
+def get_TACO_config_file_df(config_file):
     '''
-    Open JSON configuration file and return a DataFrame
-
-    Parameters
-    ----------
-    config_file : str
-        Path to JSON configuration file (ending .json).
-
-    Returns
-    -------
-    config_df : pd.DataFrame
-        DataFrame containing the information of the JSON configuration file.
-
+    Open TACO configuration file and return a corresponding DataFrame
     '''
-    # Read and parse JSON
-    
+    if not os.path.exists(config_file):
+        raise FileNotFoundError(f"File not found: {config_file}")    
     with open(config_file, "r", encoding="utf-8-sig") as f:
         config_json = json.load(f) 
-    
     # Turn dict into DataFrame
     colnames = list(config_json.keys())[:-1]
     colnames += list(pd.DataFrame(config_json["DB_parameters"][0], index=[0]).columns)
-
-    config_df = pd.DataFrame(columns=colnames)
+    # LG Avoid DataFrame concatenation warning
+    rows = []
     for db in config_json["DB_parameters"]:
-        new_line = pd.DataFrame(db, index=[0])
-        new_line["path_to_saving_file"] = config_json["path_to_saving_file"]
-        new_line["path_to_QC_file"] = config_json["path_to_QC_file"]
-        config_df = pd.concat([config_df, new_line], axis=0, ignore_index=True)
-
+        row = dict(db)
+        row["path_to_saving_file"] = config_json["path_to_saving_file"]
+        row["path_to_QC_file"] = config_json["path_to_QC_file"]
+        rows.append(row)    
+    config_df = pd.DataFrame(rows, columns=colnames)
     return config_df
 
 def create_TVC(time_trace,voltage_trace,current_trace):
@@ -879,6 +750,7 @@ def read_cell_file_h5(cell_id, config_line, selection=['All']):
     if 'Metadata' in selection and len(selection)==1:
         ## Metadata ##
         ## Specific case for Cell vizualization app, cell_id represent full path to cell file
+        print(f'read_cell_file_h5 {cell_id=}')
         current_file = h5py.File(cell_id, 'r')
         if 'Metadata' not in current_file.keys():
             print('File does not contains Metadata group')
@@ -901,6 +773,7 @@ def read_cell_file_h5(cell_id, config_line, selection=['All']):
     current_file = h5py.File(cell_file_path, 'r')
 
     # Full_TVC_table = pd.DataFrame()
+    cell_TVC_table = pd.DataFrame()
     Full_SF_dict_table = pd.DataFrame()
     Full_SF_table = pd.DataFrame()
     Metadata_table = pd.DataFrame()
@@ -1273,7 +1146,7 @@ def create_summary_tables(config_json_file_path, saving_path):
     problem_df = pd.DataFrame(columns = ['Cell_id','Error_message'])
     
     
-    config_json_file = open_json_config_file(config_json_file_path)
+    config_json_file = get_TACO_config_file_df(config_json_file_path)
     Full_population_calss_table = pd.DataFrame()
     
     #Create full population class table, and resulting cell id list

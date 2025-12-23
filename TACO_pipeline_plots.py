@@ -713,19 +713,20 @@ def plot_IO_detailed_fit_plotly(IO_plot_dict, do_fit, stim_freq_table):
 
         ))
 
+    # LG Remove poly fits
     # === Polynomial fits ===
-    for legend in poly_table["Legend"].unique():
-        df_leg = poly_table[poly_table["Legend"] == legend]
+    # for legend in poly_table["Legend"].unique():
+    #     df_leg = poly_table[poly_table["Legend"] == legend]
 
-        label = "Polynomial fit" if legend == "3rd_order_poly" else legend
-        fig.add_trace(go.Scatter(
-            x=df_leg["Stim_amp_pA"],
-            y=df_leg["Frequency_Hz"],
-            mode="lines",
-            line=dict(color=poly_color_dict.get(legend, s["model_color"]),
-                      width=s["line_width"]),
-            name=label
-        ))
+    #     label = "Polynomial fit" if legend == "3rd_order_poly" else legend
+    #     fig.add_trace(go.Scatter(
+    #         x=df_leg["Stim_amp_pA"],
+    #         y=df_leg["Frequency_Hz"],
+    #         mode="lines",
+    #         line=dict(color=poly_color_dict.get(legend, s["model_color"]),
+    #                   width=s["line_width"]),
+    #         name=label
+    #     ))
 
     # === Hill sigmoid initial ===
     fig.add_trace(go.Scatter(
@@ -741,7 +742,10 @@ def plot_IO_detailed_fit_plotly(IO_plot_dict, do_fit, stim_freq_table):
         x=model_table["Stim_amp_pA"],
         y=model_table["Frequency_Hz"],
         mode="lines",
-        line=dict(color=s["model_color"], width=s["line_width"]),
+        line=dict(color=s["model_color"],
+                  # width=s["line_width"]
+                  width=4
+                  ),
         name="IO fit"
     ))
 

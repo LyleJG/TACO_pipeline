@@ -68,6 +68,7 @@ def compute_cell_features(Full_SF_table,cell_sweep_info_table,response_duration_
 
     feature_columns = ['Response_type','Output_Duration', 'Gain','Threshold', 'Saturation_Frequency',"Saturation_Stimulus","Response_Fail_Frequency", "Response_Fail_Stimulus"]
     cell_feature_table = pd.DataFrame(columns=feature_columns)
+    # print(f'{response_duration_dictionnary.keys()=}')
 
     for response_type in response_duration_dictionnary.keys():
         output_duration_list=response_duration_dictionnary[response_type]
@@ -186,10 +187,12 @@ def get_stim_freq_table(original_SF_table, original_cell_sweep_info_table,sweep_
 
     cell_sweep_info_table=original_cell_sweep_info_table.copy()
     sweep_list=np.array(original_SF_table.loc[:,"Sweep"])
+    # print(f'{sweep_list=}')
 
     stim_freq_table=pd.DataFrame(columns=["Sweep","Stim_amp_pA","Frequency_Hz"])
     # stim_freq_table=cell_sweep_info_table.copy()
     # stim_freq_table['Frequency_Hz']=0
+
 
     for current_sweep in sweep_list:
         df=pd.DataFrame(SF_table.loc[current_sweep,'SF'].copy())
@@ -199,6 +202,11 @@ def get_stim_freq_table(original_SF_table, original_cell_sweep_info_table,sweep_
         if response_based == 'Time_based':
             #stim_freq_table.loc[current_sweep,'Frequency_Hz']=(df[df['Time_s']<(cell_sweep_info_table.loc[current_sweep,'Stim_start_s']+response_duration)].shape[0])/response_duration
             frequency = (df[df['Time_s']<(cell_sweep_info_table.loc[current_sweep,'Stim_start_s']+response_duration)].shape[0])/response_duration
+            
+            # print(f'{current_sweep=} {frequency=}')
+            # print('asdfasdf')
+            # # breakpoint()
+            
         elif response_based == 'Index_based':
             df=df.sort_values(by=["Time_s"])
             if df.shape[0] < response_duration: # if there are less spikes than response duration required, then set frequency to NaN
@@ -235,10 +243,6 @@ def get_stim_freq_table(original_SF_table, original_cell_sweep_info_table,sweep_
 
         stim_freq_table = pd.concat([stim_freq_table,new_line],ignore_index=True)
         
-        
-            
-            
-  
     stim_freq_table=pd.merge(stim_freq_table,sweep_QC_table,on='Sweep')
     stim_freq_table=stim_freq_table.astype({"Stim_amp_pA":float,
                                             "Frequency_Hz":float})
